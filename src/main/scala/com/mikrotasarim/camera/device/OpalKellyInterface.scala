@@ -18,7 +18,7 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
     throw new Exception("FPGA configuration failed.\n")
   }
 
-  override def SetWireInValue(wireNumber: Int, value: Int): Unit = panel.SetWireInValue(wireNumber, value)
+  override def SetWireInValue(wireNumber: Int, value: Long): Unit = panel.SetWireInValue(wireNumber, value)
 
   override def ActivateTriggerIn(address: Int, bit: Int): Unit = panel.ActivateTriggerIn(address, bit)
 
