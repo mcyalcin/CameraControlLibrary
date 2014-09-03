@@ -22,9 +22,15 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
 
   override def ActivateTriggerIn(address: Int, bit: Int): Unit = panel.ActivateTriggerIn(address, bit)
 
+  override def WriteToPipeIn(address: Int, size: Int, data: Array[Byte]): Unit = panel.WriteToPipeIn(address, size, data)
+
+  override def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte]): Unit =
+    panel.WriteToBlockPipeIn(address, blockSize, size, data)
+
   override def UpdateWireIns(): Unit = panel.UpdateWireIns()
 
   def IsFrontPanel3Supported(): Boolean = panel.IsFrontPanel3Supported()
 
   def IsFrontPanelEnabled(): Boolean = panel.IsFrontPanelEnabled()
+
 }

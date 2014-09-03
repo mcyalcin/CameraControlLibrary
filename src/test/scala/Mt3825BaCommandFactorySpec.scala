@@ -3,7 +3,7 @@ import org.scalatest._
 
 class Mt3825BaCommandFactorySpec extends FlatSpec with Matchers {
 
-  "A Mt3825Ba command factory" should "create the correct sequence of base commands for sending data to ROIC memory" in {
+  "A Mt3825Ba command factory" should "create the correct sequence of base commands for sending data to roic memory" in {
     val outputBuffer = new StringBuilder
     val device = new MockDeviceInterface(outputBuffer)
 

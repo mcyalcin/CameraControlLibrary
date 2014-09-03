@@ -16,6 +16,41 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
 
   def MakeReadFromRoicNucMemoryCommand() = ???
 
+  // TODO: Check if startAddress should be Long
+  def MakeWriteToFlashMemoryCommand(startAddress: Int, data: Array[Byte]): Command = {
+    // TODO: Add input validation
+    val numberOfFullBlocks = data.length/FlashBlockSize
+
+    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
+
+    (for (i <- 0 until numberOfFullBlocks)
+      yield
+        new CompositeCommand(
+          List(
+            MakeWriteToFlashMemoryCommand(FlashBlockSize, data.slice(i*FlashBlockSize, (i+1)*FlashBlockSize)),
+            MakeFlashInFifoCommitCommand()
+          )
+        )
+      ).toList
+
+    MakeWriteToFlashMemoryCommand(data.length - numberOfFullBlocks * FlashBlockSize, data.drop(numberOfFullBlocks * FlashBlockSize))
+    MakeFlashInFifoCommitCommand()
+
+    ???
+  }
+
+  private def MakeFlashInFifoCommitCommand(): Command = {
+    new CompositeCommand(List(MakeSetWireInValueCommand(0x03, 0x02000000),
+      MakeSetWireInValueCommand(0x04, 0x00000006),
+      MakeUpdateWireInsCommand(),
+      MakeActivateTriggerInCommand(0x40, 0x2)))
+  }
+
+  private def MakeWriteToFlashInFifoCommand(size: Int, data: Array[Byte]): Command = {
+    if (size == 0) new SimpleCommand(() => ()) else
+    new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, size, data))
+  }
+
   def MakeBlockWriteToRoicMemoryCommand(startAddress: Int, blocks: Array[Int]): Command = {
     if (startAddress < 0) throw new Exception("Illegal start address")
     if (startAddress + blocks.length > 127) throw new Exception("Illegal end address")
@@ -29,9 +64,6 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
       GenerateCommitWireInsCommands
     )
   }
-
-  // TODO: Implement pipe write
-  def MakeWriteToFlashMemoryCommand() = ???
 
   def MakeSoftResetAsicCommand(): Command = {
     new CompositeCommand(
@@ -84,7 +116,7 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
   private def GenerateCommitWireInsCommands: List[Command] = {
     List(
       MakeUpdateWireInsCommand(),
-      MakeActivateTriggerInCommand(WriteTrigger, WriteTriggerBit)
+      MakeActivateTriggerInCommand(TriggerWire, ExecuteCommandTriggerBit)
     )
   }
 
@@ -113,10 +145,12 @@ trait Mt3825BaConstants {
 
   // 0x20 - 0x3F WireOut
   // 0x40 - 0x5F TriggerIn
-  val WriteTrigger: Int = 0x40
+  val TriggerWire: Int = 0x40
 
   // 0x60 - 0x7F TriggerOut
   // 0x80 - 0x9F PipeIn
+  val FlashInFifoPipe = 0x80
+
   // 0xA0 - 0xBF PipeOut
 
   // Commands to be used on CommandWire
@@ -134,6 +168,8 @@ trait Mt3825BaConstants {
   val SoftResetAsicCommand: Int = 0xa0
   val SoftResetRoicCommand: Int = 0xa1
 
-  // Trigger to be used on WriteTrigger. The bit doesn't matter at the moment, the wire has only one purpose.
-  val WriteTriggerBit: Int = 0x00
+  val ExecuteCommandTriggerBit: Int = 0
+  val ResetFlashInFifoTriggerBit: Int = 1
+
+  val FlashBlockSize = 256
 }
