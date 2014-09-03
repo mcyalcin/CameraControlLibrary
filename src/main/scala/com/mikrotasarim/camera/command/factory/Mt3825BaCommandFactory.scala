@@ -16,39 +16,23 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
 
   def MakeReadFromRoicNucMemoryCommand() = ???
 
-  // TODO: Check if startAddress should be Long
-  def MakeWriteToFlashMemoryCommand(startAddress: Int, data: Array[Byte]): Command = {
-    // TODO: Add input validation
-    val numberOfFullBlocks = data.length/FlashBlockSize
+  def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
+    if (startAddress < 0) throw new Exception("Illegal start address")
+    if (startAddress > startAddress + data.length) throw new Exception("Illegal end address")
+
+    val numberOfFullBlocks = data.length / FlashBlockSize
 
     MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
 
-    (for (i <- 0 until numberOfFullBlocks)
-      yield
-        new CompositeCommand(
-          List(
-            MakeWriteToFlashMemoryCommand(FlashBlockSize, data.slice(i*FlashBlockSize, (i+1)*FlashBlockSize)),
-            MakeFlashInFifoCommitCommand()
-          )
+    val blockWriteCommandList = (
+      for (i <- 0 to numberOfFullBlocks) yield
+        MakeWriteFlashBlockCommand(
+          startAddress + i * FlashBlockSize,
+          data.slice(i * FlashBlockSize, (i + 1) * FlashBlockSize)
         )
       ).toList
 
-    MakeWriteToFlashMemoryCommand(data.length - numberOfFullBlocks * FlashBlockSize, data.drop(numberOfFullBlocks * FlashBlockSize))
-    MakeFlashInFifoCommitCommand()
-
-    ???
-  }
-
-  private def MakeFlashInFifoCommitCommand(): Command = {
-    new CompositeCommand(List(MakeSetWireInValueCommand(0x03, 0x02000000),
-      MakeSetWireInValueCommand(0x04, 0x00000006),
-      MakeUpdateWireInsCommand(),
-      MakeActivateTriggerInCommand(0x40, 0x2)))
-  }
-
-  private def MakeWriteToFlashInFifoCommand(size: Int, data: Array[Byte]): Command = {
-    if (size == 0) new SimpleCommand(() => ()) else
-    new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, size, data))
+    new CompositeCommand(blockWriteCommandList)
   }
 
   def MakeBlockWriteToRoicMemoryCommand(startAddress: Int, blocks: Array[Int]): Command = {
@@ -60,8 +44,8 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
 
     new CompositeCommand(
       (writeToAsicCommands :+
-      MakeSetWireInValueCommand(CommandWire, BlockWriteToRoicMemoryCommand)) ++
-      GenerateCommitWireInsCommands
+        MakeSetWireInValueCommand(CommandWire, BlockWriteToRoicMemoryCommand)) ++
+        GenerateCommitWireInsCommands
     )
   }
 
@@ -107,7 +91,41 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
     )
   }
 
-  private def GenerateWriteWireInCommands(address: Int, value: Int, command: Int): List[Command] = {
+  private def MakeWriteFlashBlockCommand(address: Long, data: Array[Byte]): Command = {
+    if (data.size > FlashBlockSize) throw new Exception("Data block exceeds maximum flash write block size")
+
+    new CompositeCommand(
+      List(
+        MakeResetFlashInFifoCommand(),
+        MakeSetFlashInFifoInputPipeCommand(data),
+        MakeFlashWriteLatchEnableCommand(),
+        MakeSendDataToFlashFromFlashInFifoCommand(address, data.length)
+      )
+    )
+  }
+
+  private def MakeSendDataToFlashFromFlashInFifoCommand(address: Long, dataLength: Int): Command = {
+    new CompositeCommand(
+      GenerateWriteWireInCommands(address, dataLength, WriteToFlashMemoryCommand) ++ GenerateCommitWireInsCommands
+    )
+  }
+
+  private def MakeFlashWriteLatchEnableCommand(): Command = {
+    MakeActivateTriggerInCommand(TriggerWire, FlashWriteLatchEnableTriggerBit)
+  }
+
+  private def MakeResetFlashInFifoCommand(): Command = {
+    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
+  }
+
+  private def MakeSetFlashInFifoInputPipeCommand(data: Array[Byte]): Command = {
+    if (data.length == 0)
+      new SimpleCommand(() => ())
+    else
+      new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, data.length, data))
+  }
+
+  private def GenerateWriteWireInCommands(address: Long, value: Int, command: Int): List[Command] = {
     List(MakeSetWireInValueCommand(CommandWire, command),
       MakeSetWireInValueCommand(AddressWire, address),
       MakeSetWireInValueCommand(DataWire, value))
@@ -170,6 +188,7 @@ trait Mt3825BaConstants {
 
   val ExecuteCommandTriggerBit: Int = 0
   val ResetFlashInFifoTriggerBit: Int = 1
+  val FlashWriteLatchEnableTriggerBit: Int = 2
 
   val FlashBlockSize = 256
 }
