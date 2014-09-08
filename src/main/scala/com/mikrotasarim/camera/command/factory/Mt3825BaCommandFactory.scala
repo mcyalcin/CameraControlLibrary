@@ -18,7 +18,7 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
     if (startAddress < 0) throw new Exception("Illegal start address")
-    if (startAddress > startAddress + data.length) throw new Exception("Illegal end address")
+    if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
 
     val numberOfFullBlocks = data.length / FlashBlockSize
 
@@ -44,26 +44,26 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
 
     new CompositeCommand(
       (writeToAsicCommands :+
-        MakeSetWireInValueCommand(CommandWire, BlockWriteToRoicMemoryCommand)) ++
-        GenerateCommitWireInsCommands
+        MakeSetWireInValueCommand(AsicCommandWire, BlockWriteToRoicMemoryCommand)) ++
+        GenerateCommitWireInCommands
     )
   }
 
   def MakeSoftResetAsicCommand(): Command = {
     new CompositeCommand(
-      MakeSetWireInValueCommand(CommandWire, SoftResetAsicCommand) +: GenerateCommitWireInsCommands
+      MakeSetWireInValueCommand(AsicCommandWire, SoftResetAsicCommand) +: GenerateCommitWireInCommands
     )
   }
 
   def MakeSoftResetRoicCommand(): Command = {
     new CompositeCommand(
-      MakeSetWireInValueCommand(CommandWire, SoftResetRoicCommand) +: GenerateCommitWireInsCommands
+      MakeSetWireInValueCommand(AsicCommandWire, SoftResetRoicCommand) +: GenerateCommitWireInCommands
     )
   }
 
   def MakeUpdateAsicMemoryCommand(): Command = {
     new CompositeCommand(
-      MakeSetWireInValueCommand(CommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInsCommands
+      MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands
     )
   }
 
@@ -71,7 +71,7 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
     if (address < 0 || address > 255) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInsCommands
+      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands
     )
   }
 
@@ -79,7 +79,7 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
     if (address < 0 || address > 127) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryBotCommand) ++ GenerateCommitWireInsCommands
+      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryBotCommand) ++ GenerateCommitWireInCommands
     )
   }
 
@@ -87,51 +87,55 @@ class Mt3825BaCommandFactory(device: DeviceInterface) extends Mt3825BaConstants 
     if (address < 0 || address > 127) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, value, WriteToRoicMemoryCommand) ++ GenerateCommitWireInsCommands
+      GenerateWriteWireInCommands(address, value, WriteToRoicMemoryCommand) ++ GenerateCommitWireInCommands
     )
   }
 
   private def MakeWriteFlashBlockCommand(address: Long, data: Array[Byte]): Command = {
     if (data.size > FlashBlockSize) throw new Exception("Data block exceeds maximum flash write block size")
 
-    new CompositeCommand(
-      List(
-        MakeResetFlashInFifoCommand(),
-        MakeSetFlashInFifoInputPipeCommand(data),
-        MakeFlashWriteLatchEnableCommand(),
-        MakeSendDataToFlashFromFlashInFifoCommand(address, data.length)
+    if (data.size > 0)
+      new CompositeCommand(
+        List(
+          MakeResetFlashInFifoCommand(),
+          MakeSetFlashInFifoCommand(data),
+          MakeFlashWriteLatchEnableCommand(),
+          MakeSendDataToFlashFromFlashInFifoCommand(address, data.length)
+        )
       )
-    )
+    else new SimpleCommand(() => ())
   }
 
   private def MakeSendDataToFlashFromFlashInFifoCommand(address: Long, dataLength: Int): Command = {
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, dataLength, WriteToFlashMemoryCommand) ++ GenerateCommitWireInsCommands
+      List(MakeSetWireInValueCommand(AsicCommandWire, WriteToFlashMemoryCommand),
+        MakeSetWireInValueCommand(AddressWire, address),
+        MakeSetWireInValueCommand(DataWire, dataLength),
+        MakeSetWireInValueCommand(FlashCommandWire, FlashWriteCommand)) ++ GenerateCommitWireInCommands
     )
   }
 
   private def MakeFlashWriteLatchEnableCommand(): Command = {
-    MakeActivateTriggerInCommand(TriggerWire, FlashWriteLatchEnableTriggerBit)
+    new CompositeCommand(
+      MakeSetWireInValueCommand(FlashCommandWire, FlashWriteLatchEnableCommand) +: GenerateCommitWireInCommands
+    )
   }
 
   private def MakeResetFlashInFifoCommand(): Command = {
     MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
   }
 
-  private def MakeSetFlashInFifoInputPipeCommand(data: Array[Byte]): Command = {
-    if (data.length == 0)
-      new SimpleCommand(() => ())
-    else
-      new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, data.length, data))
+  private def MakeSetFlashInFifoCommand(data: Array[Byte]): Command = {
+    new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, data.length, data))
   }
 
   private def GenerateWriteWireInCommands(address: Long, value: Int, command: Int): List[Command] = {
-    List(MakeSetWireInValueCommand(CommandWire, command),
+    List(MakeSetWireInValueCommand(AsicCommandWire, command),
       MakeSetWireInValueCommand(AddressWire, address),
       MakeSetWireInValueCommand(DataWire, value))
   }
 
-  private def GenerateCommitWireInsCommands: List[Command] = {
+  private def GenerateCommitWireInCommands: List[Command] = {
     List(
       MakeUpdateWireInsCommand(),
       MakeActivateTriggerInCommand(TriggerWire, ExecuteCommandTriggerBit)
@@ -156,39 +160,56 @@ trait Mt3825BaConstants {
 
   // Endpoint addresses
   // 0x00 - 0x1F WireIn
-  val ResetWire: Int = 0x00
-  val CommandWire: Int = 0x01
-  val AddressWire: Int = 0x02
-  val DataWire: Int = 0x03
+  val ResetWire = 0x00
+  val AsicCommandWire = 0x01
+  val FlashCommandWire = 0x04
+  val AddressWire = 0x02
+  val DataWire = 0x03
 
   // 0x20 - 0x3F WireOut
   // 0x40 - 0x5F TriggerIn
-  val TriggerWire: Int = 0x40
+  val TriggerWire = 0x40
 
   // 0x60 - 0x7F TriggerOut
+  val ReadTriggerWire = 0x60
+
   // 0x80 - 0x9F PipeIn
   val FlashInFifoPipe = 0x80
 
   // 0xA0 - 0xBF PipeOut
 
-  // Commands to be used on CommandWire
-  val WriteToAsicMemoryTopCommand: Int = 0xc0
-  val ReadFromAsicMemoryTopCommand: Int = 0xc1
-  val WriteToAsicMemoryBotCommand: Int = 0xc2
-  val ReadFromAsicMemoryBotCommand: Int = 0xc3
-  val UpdateAsicMemoryCommand: Int = 0xc4
-  val WriteToRoicMemoryCommand: Int = 0xc5
-  val ReadFromRoicMemoryCommand: Int = 0xc6
-  val BlockWriteToRoicMemoryCommand: Int = 0xc7
-  val ReadFromRoicNucMemoryCommand: Int = 0xc8
-  val ReadFromFlashMemoryCommand: Int = 0xf0
-  val WriteToFlashMemoryCommand: Int = 0xf1
-  val SoftResetAsicCommand: Int = 0xa0
-  val SoftResetRoicCommand: Int = 0xa1
+  // Reset bits - these are supposed to set one bit on a 32 bit wire, so we need to use powers of two
+  val FpgaReset = 1
+  val RoicReset = 2
+  val FlashInFifoReset = 4
 
-  val ExecuteCommandTriggerBit: Int = 0
-  val ResetFlashInFifoTriggerBit: Int = 1
-  val FlashWriteLatchEnableTriggerBit: Int = 2
+  // Commands to be used on AsicCommandWire
+  val WriteToAsicMemoryTopCommand = 0xc0
+  val ReadFromAsicMemoryTopCommand = 0xc1
+  val WriteToAsicMemoryBotCommand = 0xc2
+  val ReadFromAsicMemoryBotCommand = 0xc3
+  val UpdateAsicMemoryCommand = 0xc4
+  val WriteToRoicMemoryCommand = 0xc5
+  val ReadFromRoicMemoryCommand = 0xc6
+  val BlockWriteToRoicMemoryCommand = 0xc7
+  val ReadFromRoicNucMemoryCommand = 0xc8
+  val ReadFromFlashMemoryCommand = 0xf0
+  val WriteToFlashMemoryCommand = 0xf1
+  val SoftResetAsicCommand = 0xa0
+  val SoftResetRoicCommand = 0xa1
+
+  // Commands to be used on FlashCommandWire, along with read or write to flash memory asic commands
+  val FlashReadCommand = 0x0b
+  val FlashWriteCommand = 0x12
+  val UnreliableFlashWriteCommand = 0x32
+  val FlashWriteLatchEnableCommand = 0x06
+  val FlashSectorErase = 0xd8
+  val FlashBulkErase = 0xc7
+
+  val ExecuteCommandTriggerBit = 0
+  val ResetFlashInFifoTriggerBit = 1
+  val ReadNucTriggerBit = 3
 
   val FlashBlockSize = 256
+  val FlashMemoryMaxAddress = 0x1000000-1
 }
