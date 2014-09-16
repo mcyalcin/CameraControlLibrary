@@ -1,5 +1,5 @@
 package com.mikrotasarim.camera.command
 
-trait Command {
+abstract class Command {
   def Execute()
 }
