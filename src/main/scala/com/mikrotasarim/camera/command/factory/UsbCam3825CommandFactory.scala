@@ -20,6 +20,10 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
   def MakeReadFromRoicNucMemoryCommand() = ???
 
+  def MakeDisconnectCommand(): Command = {
+    new SimpleCommand(() => device.Disconnect())
+  }
+
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
     if (startAddress < 0) throw new Exception("Illegal start address")
     if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")

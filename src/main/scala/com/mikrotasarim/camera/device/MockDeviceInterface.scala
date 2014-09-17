@@ -11,4 +11,6 @@ class MockDeviceInterface(outputBuffer: StringBuilder) extends DeviceInterface {
     outputBuffer.append("A data array of size " + data.length + " claimed to be of size " + size + " written to pipe " + address + "\n")
 
   override def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte]): Unit = ???
+
+  override def Disconnect(): Unit = "Device disconnected."
 }

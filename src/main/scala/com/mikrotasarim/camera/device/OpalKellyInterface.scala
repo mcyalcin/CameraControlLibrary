@@ -3,17 +3,17 @@ package com.mikrotasarim.camera.device
 import com.opalkelly.frontpanel._
 
 class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
+
   System.loadLibrary("okjFrontPanel")
 
   val panel = new okCFrontPanel()
+
   if (okCFrontPanel.ErrorCode.NoError != panel.OpenBySerial("")) {
     throw new Exception("A device could not be opened.  Is one connected?\n")
   }
 
-  // Setup the PLL from defaults.
   panel.LoadDefaultPLLConfiguration()
 
-  // Download the configuration file.
   if (okCFrontPanel.ErrorCode.NoError != panel.ConfigureFPGA(bitFileName)) {
     throw new Exception("FPGA configuration failed.\n")
   }
@@ -33,4 +33,5 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
 
   def IsFrontPanelEnabled(): Boolean = panel.IsFrontPanelEnabled()
 
+  def Disconnect(): Unit = panel.delete()
 }

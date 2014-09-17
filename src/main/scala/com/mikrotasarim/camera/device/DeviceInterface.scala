@@ -6,4 +6,5 @@ trait DeviceInterface {
   def WriteToPipeIn(address: Int, size: Int, data: Array[Byte])
   def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte])
   def UpdateWireIns()
+  def Disconnect()
 }
