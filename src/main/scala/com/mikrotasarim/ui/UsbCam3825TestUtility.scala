@@ -1,6 +1,7 @@
 package com.mikrotasarim.ui
 
 import com.mikrotasarim.camera.Model
+import com.mikrotasarim.utility.DialogMessageStage
 
 import scalafx.Includes._
 import scalafx.application.JFXApp
@@ -10,7 +11,7 @@ import scalafx.geometry.Insets
 import scalafx.scene.{Node, Scene}
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
-import scalafx.stage.{StageStyle, Stage, FileChooser}
+import scalafx.stage.FileChooser
 
 object UsbCam3825TestUtility extends JFXApp {
 
@@ -40,9 +41,19 @@ object UsbCam3825TestUtility extends JFXApp {
           content = createTimingGeneratorTab
           closable = false
           disable <== !Model.bitfileDeployed
+        },
+        new Tab {
+          text = "ADC Channel"
+          content = createAdcChannelTab
+          closable = false
+          disable <== !Model.bitfileDeployed
         }
       )
     }
+  }
+
+  private def createAdcChannelTab: Node = {
+    new Label("Not implemented tey.")
   }
 
   private def createBiasGeneratorTab: Node = {
@@ -110,7 +121,13 @@ object UsbCam3825TestUtility extends JFXApp {
     new VBox {
       padding = Insets(10)
       spacing = 20
-      content = createSelectBitfileHBox
+      content = List(
+        new CheckBox("Software Self Test Mode") {
+          inner => inner.selected <==> Model.testMode
+          tooltip = "On test mode, software works with a mock device interface instead of an actual device"
+        },
+        createSelectBitfileHBox
+      )
     }
   }
 
@@ -144,12 +161,8 @@ object UsbCam3825TestUtility extends JFXApp {
           Model.DeployBitfile()
         } catch {
           case e: Exception =>
-            val dialog = new Stage
-            dialog.initStyle(StageStyle.UTILITY)
-            val scene = new Scene {
-              content = new Label(e.getMessage)
-            }
-            dialog.setScene(scene)
+            val dialog = new DialogMessageStage("Error",
+              e.getMessage, 320, 100, null)
             dialog.show()
         }
       }
@@ -159,7 +172,7 @@ object UsbCam3825TestUtility extends JFXApp {
   private def createDisconnectFromFpgaButton: Button = {
     new Button("Disconnect") {
       id = "disconnectButton"
-      disable <== !Model.bitfileDeployed
+      disable <== (!Model.bitfileDeployed || Model.testMode)
       onAction = handle {
         Model.DisconnectFromDevice()
       }

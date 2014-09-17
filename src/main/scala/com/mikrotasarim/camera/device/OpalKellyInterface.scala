@@ -15,6 +15,7 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
   panel.LoadDefaultPLLConfiguration()
 
   if (okCFrontPanel.ErrorCode.NoError != panel.ConfigureFPGA(bitFileName)) {
+    panel.delete()
     throw new Exception("FPGA configuration failed.\n")
   }
 

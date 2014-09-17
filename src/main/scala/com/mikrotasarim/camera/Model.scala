@@ -1,7 +1,7 @@
 package com.mikrotasarim.camera
 
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
-import com.mikrotasarim.camera.device.OpalKellyInterface
+import com.mikrotasarim.camera.device.{MockDeviceInterface, OpalKellyInterface}
 
 import scalafx.beans.property.{BooleanProperty, StringProperty}
 
@@ -22,6 +22,12 @@ object Model {
 
   val bitfilePath: StringProperty = new StringProperty()
   val bitfileDeployed: BooleanProperty = new BooleanProperty() {value = false}
+  val testMode: BooleanProperty = new BooleanProperty() {value = false}
 
-
+  testMode.onChange(if (testMode.value) {
+    bitfileDeployed.value = true
+    commandFactory = new UsbCam3825CommandFactory(new MockDeviceInterface(new StringBuilder()))
+  } else {
+    bitfileDeployed.value = false
+  })
 }
