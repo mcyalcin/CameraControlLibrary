@@ -41,8 +41,6 @@ class DacControlModel(
   }
 
   def memoryValue: Long = {
-    println(value.value)
-
     def convertNumericValueToSteps: Long = {
       if (value.value > valueRange._2 || value.value < valueRange._1) throw new Exception("Value out of bounds")
       val numberOfSteps = 2 pow valueBits
