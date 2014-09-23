@@ -23,83 +23,85 @@ object UsbCam3825TestUtilityModel {
 
   val bitfilePath: StringProperty = new StringProperty()
   val bitfileDeployed: BooleanProperty = new BooleanProperty() {value = false}
-  val testMode: BooleanProperty = new BooleanProperty() {value = false}
 
-  testMode.onChange(if (testMode.value) {
-    bitfileDeployed.value = true
-    commandFactory = new UsbCam3825CommandFactory(new ConsoleMockDeviceInterface)
-  } else {
-    bitfileDeployed.value = false
-  })
+  val testMode: BooleanProperty = new BooleanProperty() {
+    value = false
+    onChange(if (testMode.value) {
+      bitfileDeployed.value = true
+      commandFactory = new UsbCam3825CommandFactory(new ConsoleMockDeviceInterface)
+    } else {
+      bitfileDeployed.value = false
+    })
+  }
 
-  private def commitDac(dac: DacControlModel) =
+  private def CommitDac(dac: DacControlModel) =
     commandFactory.MakeWriteToAsicMemoryTopCommand(dac.address, dac.memoryValue).Execute()
 
-  private def createTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 140), address, 7, commitDac)
+  private def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
+    new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitDac)
 
-  private def createTimingGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 3.3), address, 12, commitDac)
+  private def CreateTimingGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
+    new DacControlModel(label, defaultValue, (0, 3.3), address, 12, CommitDac)
 
-  def createBiasGeneratorCurrentDac(label: String, address: Int, defaultValue: Int) =
-    new DacControlModel(label, defaultValue, (0, 128), address, 7, commitDac)
+  private def CreateBiasGeneratorCurrentDac(label: String, address: Int, defaultValue: Int) =
+    new DacControlModel(label, defaultValue, (0, 128), address, 7, CommitDac)
 
-  def createBiasGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 3), address, 12, commitDac)
+  private def CreateBiasGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
+    new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitDac)
 
   val timingGeneratorVoltageDacs = ObservableBuffer(
-    createTimingGeneratorVoltageDac("vpcas_cp", 9, 1.65),
-    createTimingGeneratorVoltageDac("vncas_cp", 8, 1.65),
-    createTimingGeneratorVoltageDac("vctrl", 7, 1.65)
+    CreateTimingGeneratorVoltageDac("vpcas_cp", 9, 1.65),
+    CreateTimingGeneratorVoltageDac("vncas_cp", 8, 1.65),
+    CreateTimingGeneratorVoltageDac("vctrl", 7, 1.65)
   )
 
   val timingGeneratorCurrentDacs = ObservableBuffer(
-    createTimingGeneratorCurrentDac("ibias_n_cp", 6, 32),
-    createTimingGeneratorCurrentDac("ibias_p_cp", 5, 32),
-    createTimingGeneratorCurrentDac("ibias_vi", 4, 1),
-    createTimingGeneratorCurrentDac("ibias_vcdl", 3, 6)
+    CreateTimingGeneratorCurrentDac("ibias_n_cp", 6, 32),
+    CreateTimingGeneratorCurrentDac("ibias_p_cp", 5, 32),
+    CreateTimingGeneratorCurrentDac("ibias_vi", 4, 1),
+    CreateTimingGeneratorCurrentDac("ibias_vcdl", 3, 6)
   )
 
   val biasGeneratorVoltageDacs = ObservableBuffer(
-    createBiasGeneratorVoltageDac("vin_p_ref", 80, 1.65),
-    createBiasGeneratorVoltageDac("vin_n_ref", 79, 1.65),
-    createBiasGeneratorVoltageDac("vpcas_predrv", 78, 1.8),
-    createBiasGeneratorVoltageDac("vncas_predrv", 77, 1.5),
-    createBiasGeneratorVoltageDac("vpcas_pga", 76, 1.8),
-    createBiasGeneratorVoltageDac("vncas_pga", 75, 1.5),
-    createBiasGeneratorVoltageDac("vcm_pga", 74, 1.65),
-    createBiasGeneratorVoltageDac("vpcas_cm_pga", 73, 1.65),
-    createBiasGeneratorVoltageDac("vncas_cm_pga", 72, 1.65),
-    createBiasGeneratorVoltageDac("vpcas_1_adc", 71, 1.8),
-    createBiasGeneratorVoltageDac("vncas_1_adc", 70, 1.5),
-    createBiasGeneratorVoltageDac("vncas_p_1_adc", 69, 1.55),
-    createBiasGeneratorVoltageDac("vpcas_2_adc", 68, 1.8),
-    createBiasGeneratorVoltageDac("vncas_2_adc", 67, 1.5),
-    createBiasGeneratorVoltageDac("vncas_p_2_adc", 66, 1.55),
-    createBiasGeneratorVoltageDac("vpcas_3_adc", 65, 1.8),
-    createBiasGeneratorVoltageDac("vncas_3_adc", 64, 1.5),
-    createBiasGeneratorVoltageDac("vcm_adc", 63, 1.65),
-    createBiasGeneratorVoltageDac("vpcas_cm_adc", 62, 1.65),
-    createBiasGeneratorVoltageDac("vncas_cm_adc", 61, 1.65),
-    createBiasGeneratorVoltageDac("vref_high", 60, 2.65),
-    createBiasGeneratorVoltageDac("vpcas_ref_high", 59, 1.65),
-    createBiasGeneratorVoltageDac("vncas_ref_high", 58, 1.65),
-    createBiasGeneratorVoltageDac("vref_low", 57, 0.65),
-    createBiasGeneratorVoltageDac("vpcas_ref_low", 56, 1.65),
-    createBiasGeneratorVoltageDac("vncas_ref_low", 55, 1.65),
-    createBiasGeneratorVoltageDac("vref_mid", 54, 1.65),
-    createBiasGeneratorVoltageDac("vpcas_ref_mid", 53, 1.65),
-    createBiasGeneratorVoltageDac("vncas_ref_mid", 52, 1.65)
+    CreateBiasGeneratorVoltageDac("vin_p_ref", 80, 1.65),
+    CreateBiasGeneratorVoltageDac("vin_n_ref", 79, 1.65),
+    CreateBiasGeneratorVoltageDac("vpcas_predrv", 78, 1.8),
+    CreateBiasGeneratorVoltageDac("vncas_predrv", 77, 1.5),
+    CreateBiasGeneratorVoltageDac("vpcas_pga", 76, 1.8),
+    CreateBiasGeneratorVoltageDac("vncas_pga", 75, 1.5),
+    CreateBiasGeneratorVoltageDac("vcm_pga", 74, 1.65),
+    CreateBiasGeneratorVoltageDac("vpcas_cm_pga", 73, 1.65),
+    CreateBiasGeneratorVoltageDac("vncas_cm_pga", 72, 1.65),
+    CreateBiasGeneratorVoltageDac("vpcas_1_adc", 71, 1.8),
+    CreateBiasGeneratorVoltageDac("vncas_1_adc", 70, 1.5),
+    CreateBiasGeneratorVoltageDac("vncas_p_1_adc", 69, 1.55),
+    CreateBiasGeneratorVoltageDac("vpcas_2_adc", 68, 1.8),
+    CreateBiasGeneratorVoltageDac("vncas_2_adc", 67, 1.5),
+    CreateBiasGeneratorVoltageDac("vncas_p_2_adc", 66, 1.55),
+    CreateBiasGeneratorVoltageDac("vpcas_3_adc", 65, 1.8),
+    CreateBiasGeneratorVoltageDac("vncas_3_adc", 64, 1.5),
+    CreateBiasGeneratorVoltageDac("vcm_adc", 63, 1.65),
+    CreateBiasGeneratorVoltageDac("vpcas_cm_adc", 62, 1.65),
+    CreateBiasGeneratorVoltageDac("vncas_cm_adc", 61, 1.65),
+    CreateBiasGeneratorVoltageDac("vref_high", 60, 2.65),
+    CreateBiasGeneratorVoltageDac("vpcas_ref_high", 59, 1.65),
+    CreateBiasGeneratorVoltageDac("vncas_ref_high", 58, 1.65),
+    CreateBiasGeneratorVoltageDac("vref_low", 57, 0.65),
+    CreateBiasGeneratorVoltageDac("vpcas_ref_low", 56, 1.65),
+    CreateBiasGeneratorVoltageDac("vncas_ref_low", 55, 1.65),
+    CreateBiasGeneratorVoltageDac("vref_mid", 54, 1.65),
+    CreateBiasGeneratorVoltageDac("vpcas_ref_mid", 53, 1.65),
+    CreateBiasGeneratorVoltageDac("vncas_ref_mid", 52, 1.65)
   )
 
   val biasGeneratorCurrentDacs = ObservableBuffer(
-    createBiasGeneratorCurrentDac("ibias_predrv", 51, 40),
-    createBiasGeneratorCurrentDac("ibi_pga", 50, 18),
-    createBiasGeneratorCurrentDac("ibias_cm_pga", 49, 18),
-    createBiasGeneratorCurrentDac("ibias_adc", 48, 16),
-    createBiasGeneratorCurrentDac("ibias_cm_adc", 47, 16),
-    createBiasGeneratorCurrentDac("ibias_ref_high", 46, 16),
-    createBiasGeneratorCurrentDac("ibias_ref_low", 45, 18),
-    createBiasGeneratorCurrentDac("ibias_ref_mid", 44, 16)
+    CreateBiasGeneratorCurrentDac("ibias_predrv", 51, 40),
+    CreateBiasGeneratorCurrentDac("ibi_pga", 50, 18),
+    CreateBiasGeneratorCurrentDac("ibias_cm_pga", 49, 18),
+    CreateBiasGeneratorCurrentDac("ibias_adc", 48, 16),
+    CreateBiasGeneratorCurrentDac("ibias_cm_adc", 47, 16),
+    CreateBiasGeneratorCurrentDac("ibias_ref_high", 46, 16),
+    CreateBiasGeneratorCurrentDac("ibias_ref_low", 45, 18),
+    CreateBiasGeneratorCurrentDac("ibias_ref_mid", 44, 16)
   )
 }
