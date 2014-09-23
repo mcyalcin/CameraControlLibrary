@@ -130,7 +130,7 @@ object UsbCam3825TestUtility extends JFXApp {
         },
         new Button("Reset") {
           onAction = () => dac.Reset()
-          tooltip = "Reset to " + dac.defaultValue + " uA"
+          tooltip = "Reset to " + dac.defaultValue + " " + unitLabel
         },
         new CheckBox("External") {
           inner =>
