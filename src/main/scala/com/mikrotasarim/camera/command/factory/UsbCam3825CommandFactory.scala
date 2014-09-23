@@ -220,47 +220,4 @@ trait UsbCam3825Constants {
 
   val FlashBlockSize = 256
   val FlashMemoryMaxAddress = 0x1000000-1
-
-  val Mt3825BaBiasGeneratorMemoryAddresses = Map(
-    "ibias_predrv" -> 51,
-    "vin_p_ref" -> 80,
-    "vin_n_ref" -> 79,
-    "vpcas_predrv" -> 78,
-    "vncas_predrv" -> 77,
-    "ibi_pga" -> 50,
-    "vpcas_pga" -> 76,
-    "vncas_pga" -> 75,
-    "ibias_cm_pga" -> 49,
-    "vcm_pga" -> 74,
-    "vpcas_cm_pga" -> 73,
-    "vncas_cm_pga" -> 72,
-    "ibias_adc" -> 48,
-    "vpcas_1_adc" -> 71,
-    "vncas_1_adc" -> 70,
-    "vncas_p_1_adc" -> 69,
-    "vpcas_2_adc" -> 68,
-    "vncas_2_adc" -> 67,
-    "vncas_p_2_adc" -> 66,
-    "vpcas_3_adc" -> 65,
-    "vncas_3_adc" -> 64,
-    "ibias_cm_adc" -> 47,
-    "vcm_adc" -> 63,
-    "vpcas_cm_adc" -> 62,
-    "vncas_cm_adc" -> 61,
-
-    "ibias_ref_high" -> 46,
-    "vref_high" -> 60,
-    "vpcas_ref_high" -> 59,
-    "vncas_ref_high" -> 58,
-
-    "ibias_ref_low" -> 45,
-    "vref_low" -> 57,
-    "vpcas_ref_low" -> 56,
-    "vncas_ref_low" -> 55,
-
-    "ibias_ref_mid" -> 44,
-    "vref_mid" -> 54,
-    "vpcas_ref_mid" -> 53,
-    "vncas_ref_mid" -> 52
-  )
 }
