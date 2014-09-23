@@ -3,10 +3,6 @@ package com.mikrotasarim.camera.command.factory
 import com.mikrotasarim.camera.command._
 import com.mikrotasarim.camera.device._
 
-object UsbCam3825CommandFactory {
-
-}
-
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
   // TODO: Work out how to implement read commands.
