@@ -75,7 +75,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     )
   }
 
-  def MakeWriteToAsicMemoryTopCommand(address: Int, value: Int): Command = {
+  def MakeWriteToAsicMemoryTopCommand(address: Int, value: Long): Command = {
     if (address < 0 || address > 255) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
@@ -83,7 +83,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     )
   }
 
-  def MakeWriteToAsicMemoryBotCommand(address: Int, value: Int): Command = {
+  def MakeWriteToAsicMemoryBotCommand(address: Int, value: Long): Command = {
     if (address < 0 || address > 127) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
@@ -137,7 +137,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     new SimpleCommand(() => device.WriteToPipeIn(FlashInFifoPipe, data.length, data))
   }
 
-  private def GenerateWriteWireInCommands(address: Long, value: Int, command: Int): List[Command] = {
+  private def GenerateWriteWireInCommands(address: Long, value: Long, command: Int): List[Command] = {
     List(MakeSetWireInValueCommand(AsicCommandWire, command),
       MakeSetWireInValueCommand(AddressWire, address),
       MakeSetWireInValueCommand(DataWire, value))
