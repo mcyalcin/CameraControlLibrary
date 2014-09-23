@@ -32,9 +32,8 @@ object UsbCam3825TestUtilityModel {
     bitfileDeployed.value = false
   })
 
-  private def commitDac(dac: DacControlModel) {
+  private def commitDac(dac: DacControlModel) =
     commandFactory.MakeWriteToAsicMemoryTopCommand(dac.address, dac.memoryValue).Execute()
-  }
 
   private def createTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 140), address, 7, commitDac)

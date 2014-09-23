@@ -106,7 +106,7 @@ object UsbCam3825TestUtility extends JFXApp {
 
   private def createBiasGeneratorCurrentDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.biasGeneratorCurrentDacs, "%3.0f", "uA", 1)
 
-  private def createBiasGeneratorVoltageDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.biasGeneratorVoltageDacs, "%1.3f", "V", 0.01)
+  private def createBiasGeneratorVoltageDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.biasGeneratorVoltageDacs, "%1.3f", "V", 0.001)
 
   private def createDacControls(dacList: Seq[DacControlModel], format: String, unitLabel: String, resolution: Double): List[Node] = {
     (for (dac <- dacList) yield new HBox {
@@ -121,11 +121,11 @@ object UsbCam3825TestUtility extends JFXApp {
           min = dac.valueRange._1
           max = dac.valueRange._2
           blockIncrement = resolution
-          value <==> dac.dval
+          value <==> dac.value
           labelFormatter = new DoubleStringConverter
         },
         new Label {
-          text <== (dac.dval.asString(format) + " " + unitLabel)
+          text <== (dac.value.asString(format) + " " + unitLabel)
           prefWidth = 50
         },
         new Button("Reset") {
@@ -166,7 +166,7 @@ object UsbCam3825TestUtility extends JFXApp {
 
   private def createTimingGeneratorCurrentDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.timingGeneratorCurrentDacs, "%3.0f", "uA", 1)
 
-  private def createTimingGeneratorVoltageDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.timingGeneratorVoltageDacs, "%1.3f", "V", 0.01)
+  private def createTimingGeneratorVoltageDacControls: List[Node] = createDacControls(UsbCam3825TestUtilityModel.timingGeneratorVoltageDacs, "%1.3f", "V", 0.001)
 
   private def createFpgaControlPanel: Node = {
     new ScrollPane {

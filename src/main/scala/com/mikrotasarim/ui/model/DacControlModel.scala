@@ -13,7 +13,7 @@ class DacControlModel(
                        ) {
 
   def Reset() = {
-    dval.value = defaultValue
+    value.value = defaultValue
     external.value = false
     lowPower.value = false
     powerDown.value = false
@@ -21,14 +21,13 @@ class DacControlModel(
   }
 
   val name = new StringProperty(this, "name", label)
-  val value = new ObjectProperty[Double](this, "value", defaultValue)
-  val dval = new DoubleProperty(this, "dval", defaultValue)
+  val value = new DoubleProperty(this, "dval", defaultValue)
   val changed = new BooleanProperty(this, "changed", false)
   val external = new BooleanProperty(this, "external", false)
   val lowPower = new BooleanProperty(this, "external", false)
   val powerDown = new BooleanProperty(this, "external", false)
 
-  dval.onChange({
+  value.onChange({
     changed.value = true
     external.value = true
   })
@@ -42,6 +41,8 @@ class DacControlModel(
   }
 
   def memoryValue: Long = {
+    println(value.value)
+
     def convertNumericValueToSteps: Long = {
       if (value.value > valueRange._2 || value.value < valueRange._1) throw new Exception("Value out of bounds")
       val numberOfSteps = 2 pow valueBits
