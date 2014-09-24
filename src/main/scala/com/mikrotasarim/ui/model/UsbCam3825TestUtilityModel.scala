@@ -3,7 +3,9 @@ package com.mikrotasarim.ui.model
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.{ConsoleMockDeviceInterface, OpalKellyInterface}
 
-import scalafx.beans.property.{BooleanProperty, StringProperty}
+import scala.collection.immutable.ListMap
+import scalafx.beans.property.{IntegerProperty, BooleanProperty, StringProperty}
+import scalafx.beans.value.ObservableValue
 import scalafx.collections.ObservableBuffer
 
 object UsbCam3825TestUtilityModel {
@@ -34,20 +36,21 @@ object UsbCam3825TestUtilityModel {
     })
   }
 
-  private def CommitDac(dac: DacControlModel) =
-    commandFactory.MakeWriteToAsicMemoryTopCommand(dac.address, dac.memoryValue).Execute()
+  // TODO: Move this into memory location class
+  private def CommitMemoryLocation(memoryLocation: MemoryLocation) =
+    commandFactory.MakeWriteToAsicMemoryTopCommand(memoryLocation.address, memoryLocation.memoryValue).Execute()
 
   private def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitDac)
+    new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitMemoryLocation)
 
   private def CreateTimingGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 3.3), address, 12, CommitDac)
+    new DacControlModel(label, defaultValue, (0, 3.3), address, 12, CommitMemoryLocation)
 
   private def CreateBiasGeneratorCurrentDac(label: String, address: Int, defaultValue: Int) =
-    new DacControlModel(label, defaultValue, (0, 128), address, 7, CommitDac)
+    new DacControlModel(label, defaultValue, (0, 128), address, 7, CommitMemoryLocation)
 
   private def CreateBiasGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitDac)
+    new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitMemoryLocation)
 
   val timingGeneratorVoltageDacs = ObservableBuffer(
     CreateTimingGeneratorVoltageDac("vpcas_cp", 9, 1.65),
@@ -104,4 +107,169 @@ object UsbCam3825TestUtilityModel {
     CreateBiasGeneratorCurrentDac("ibias_ref_low", 45, 18),
     CreateBiasGeneratorCurrentDac("ibias_ref_mid", 44, 16)
   )
+
+  val phaseSignals = ObservableBuffer(
+    CreatePhaseSignal("pga_s", "10000101111110", 13),
+    CreatePhaseSignal("pga_a", "00001000111100", 14),
+    CreatePhaseSignal("adc_odd_s", "10000101111110", 15),
+    CreatePhaseSignal("adc_odd_a", "10000101111110", 16),
+    CreatePhaseSignal("adc_even_s", "10001001111100", 17),
+    CreatePhaseSignal("adc_even_a", "00000100111110", 18)
+  )
+
+  val lockPhaseSignals = new BooleanProperty(this, "lockPhaseSignals", false)
+  val phaseSignalsChanged = new BooleanProperty(this, "phaseSignalsChanged", false)
+
+  class PhaseSignal(val label: String, val fallen : Int, val risen : Int, val address: Int) {
+    val fall = new IntegerProperty(this, "fall", fallen)
+    val rise = new IntegerProperty(this, "rise", risen)
+
+    fall.onChange((changed, oldValue, newValue) => {
+      sliderChangedOnLock(changed, newValue.intValue - oldValue.intValue)
+      phaseSignalsChanged.value = true
+    })
+
+    rise.onChange((changed, oldValue, newValue) => {
+      sliderChangedOnLock(changed, newValue.intValue - oldValue.intValue)
+      phaseSignalsChanged.value = true
+    })
+
+    def sliderChangedOnLock(changed: ObservableValue[Int, Number], offset: Int) {
+      if (lockPhaseSignals.value) {
+        lockPhaseSignals.value = false
+
+        for (phaseSignal <- phaseSignals) {
+          if (phaseSignal.fall != changed) {
+            phaseSignal.fall.value = (phaseSignal.fall.value + offset + 128) % 128
+          }
+          if (phaseSignal.rise != changed) {
+            phaseSignal.rise.value = (phaseSignal.rise.value + offset + 128) % 128
+          }
+        }
+        lockPhaseSignals.value = true
+      }
+    }
+
+    def reset() {
+      fall.value = fallen
+      rise.value = risen
+    }
+
+    def memoryValue = fall.value * 128 + rise.value
+  }
+
+  private def CreatePhaseSignal(label: String, defaultValueString: String, address: Int): PhaseSignal = {
+    new PhaseSignal(label, Integer.parseInt(defaultValueString.substring(0,7),2), Integer.parseInt(defaultValueString.substring(7),2), address)
+  }
+
+  def CommitPhaseSignals() {
+    for (phaseSignal <- phaseSignals) {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(phaseSignal.address, phaseSignal.memoryValue).Execute()
+    }
+    phaseSignalsChanged.value = false
+  }
+
+  def ResetPhaseSignals(): Unit = {
+    lockPhaseSignals.value = false
+    for (phaseSignal <- phaseSignals) {
+      phaseSignal.reset()
+    }
+    CommitPhaseSignals()
+  }
+
+  val powerReferences = ObservableBuffer("20", "50", "40%", "99%")
+
+  object BiasGeneratorPowerSettings extends MemoryLocation {
+    val powerDownTop = new BooleanProperty(this, "top", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}
+    val powerDownBot = new BooleanProperty(this, "bot", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}
+
+    val address = 81
+
+    def memoryValue = (if (powerDownBot.value) 1 else 0) + (if (powerDownTop.value) 2 else 0)
+  }
+
+  object BiasGeneratorActivator extends MemoryLocation {
+    val switch = new BooleanProperty(this, "switch", false) {onChange(CommitMemoryLocation(BiasGeneratorActivator))}
+
+    val address = 40
+
+    def memoryValue = if (switch.value) 5 else 4
+  }
+
+  object BiasGeneratorTestSettings extends MemoryLocation {
+
+    val voltageTests = ListMap(
+      "No voltage test" -> "0",
+      "H" -> "1000000",
+      "L" -> "1000001",
+      "DAC0" -> "1000010",
+      "DAC1" -> "1000011",
+      "DAC2"-> "1000100",
+      "DAC3"-> "1000101",
+      "DAC4"-> "1000110",
+      "DAC5"-> "1000111",
+      "DAC6"-> "1001000",
+      "DAC7"-> "1001001",
+      "DAC8"-> "1001010",
+      "DAC9"-> "1001011",
+      "DAC10"-> "1001100",
+      "DAC11"-> "1001101",
+      "DAC12"-> "1001110",
+      "DAC13"-> "1001111",
+      "DAC14"-> "1010000",
+      "DAC15"-> "1010001",
+      "DAC16"-> "1010010",
+      "DAC17"-> "1010011",
+      "DAC18"-> "1010100",
+      "DAC19"-> "1010101",
+      "DAC20"-> "1010110",
+      "DAC21"-> "1010111",
+      "DAC22"-> "1011000",
+      "DAC23"-> "1011001",
+      "DAC24"-> "1011010",
+      "DAC25"-> "1011011",
+      "DAC26"-> "1011100",
+      "DAC27"-> "1011101",
+      "DAC28"-> "1011110",
+      "sub"-> "1011111",
+      "vbg"-> "1100000",
+      "vdda"-> "1100001",
+      "vhigh"-> "1100010",
+      "vncas"-> "1100011",
+      "vpbias"-> "1100101",
+      "vpcas"-> "1100101",
+      "vssa"-> "1100110",
+      "vtemp" -> "1100111"
+    )
+
+    val voltageTestLabels = ObservableBuffer(voltageTests.keys.toList)
+
+    var selectedVoltageTest = StringProperty("No voltage test")
+
+    selectedVoltageTest.onChange(CommitMemoryLocation(this))
+
+    var selectedCurrentTest = StringProperty("No current test")
+
+    selectedCurrentTest.onChange(CommitMemoryLocation(this))
+
+    val currentTests = ListMap (
+      "No current test" -> "0",
+      "itest_bg" -> "1000",
+      "itest<0>" -> "1001",
+      "itest<1>" -> "1010",
+      "itest<2>" -> "1011"
+    )
+
+    val currentTestLabels = ObservableBuffer(currentTests.keys.toList)
+
+    val address = 39
+
+    def memoryValue = Integer.parseInt(voltageTests(selectedVoltageTest.value), 2) * 128 +
+                      Integer.parseInt(currentTests(selectedCurrentTest.value), 2)
+  }
+
+  abstract class MemoryLocation {
+    val address: Int
+    def memoryValue: Long
+  }
 }

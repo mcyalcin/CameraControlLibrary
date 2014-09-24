@@ -2,6 +2,7 @@ package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.DacControlModel
 import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel
+import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.PhaseSignal
 import com.mikrotasarim.utility.DialogMessageStage
 
 import scalafx.Includes._
@@ -92,12 +93,48 @@ object UsbCam3825TestUtility extends JFXApp {
         spacing = 20
         content = List(
           new VBox {
-            spacing = 10
-            content = List(new Label("Voltage DACs")) ++ createBiasGeneratorVoltageDacControls
+            spacing = 20
+            content = List(
+              new CheckBox("Activate") {
+                selected <==> UsbCam3825TestUtilityModel.BiasGeneratorActivator.switch
+              },
+              new HBox {
+                spacing = 10
+                content = List(
+                  new CheckBox("Power Down Top") {
+                    selected <==> UsbCam3825TestUtilityModel.BiasGeneratorPowerSettings.powerDownTop
+                  },
+                  new CheckBox("Power Down Bottom") {
+                    selected <==> UsbCam3825TestUtilityModel.BiasGeneratorPowerSettings.powerDownBot
+                  }
+                )
+              },
+              new HBox {
+                spacing = 20
+                content = List(
+                  new ChoiceBox(UsbCam3825TestUtilityModel.BiasGeneratorTestSettings.voltageTestLabels) {
+                    selectionModel().selectFirst()
+                    selectionModel().selectedItem.onChange(
+                      (_, _, newValue) => UsbCam3825TestUtilityModel.BiasGeneratorTestSettings.selectedVoltageTest.value = newValue
+                    )
+                  },
+                  new ChoiceBox(UsbCam3825TestUtilityModel.BiasGeneratorTestSettings.currentTestLabels){
+                    selectionModel().selectFirst()
+                    selectionModel().selectedItem.onChange(
+                      (_, _, newValue) => UsbCam3825TestUtilityModel.BiasGeneratorTestSettings.selectedCurrentTest.value = newValue
+                    )
+                  }
+                )
+              },
+              new VBox {
+                spacing = 10
+                content = List(new Label("Current DACs")) ++ createBiasGeneratorCurrentDacControls
+              }
+            )
           },
           new VBox {
             spacing = 10
-            content = List(new Label("Current DACs")) ++ createBiasGeneratorCurrentDacControls
+            content = List(new Label("Voltage DACs")) ++ createBiasGeneratorVoltageDacControls
           }
         )
       }
@@ -159,8 +196,97 @@ object UsbCam3825TestUtility extends JFXApp {
       content = new VBox {
         padding = Insets(10)
         spacing = 10
-        content = List(new Label("Voltage DACs")) ++ createTimingGeneratorVoltageDacControls ++ List(new Label("Current DACs")) ++ createTimingGeneratorCurrentDacControls
+        content =
+          (createTimingGeneratorMainControls +:
+          new Label("Voltage DACs") +:
+          createTimingGeneratorVoltageDacControls) ++
+          (new Label("Current DACs") +:
+          createTimingGeneratorCurrentDacControls) :+
+          new Label("Phase Signals") :+
+          createPhaseSignalControls
       }
+    }
+  }
+
+  private def createTimingGeneratorMainControls: Node = {
+    new HBox {
+      spacing = 10
+      content = List(
+        new CheckBox("dll_enable"),
+        new CheckBox("sel_pw_out"),
+        new ChoiceBox(UsbCam3825TestUtilityModel.powerReferences) {
+          selectionModel().selectFirst()
+        }
+      )
+    }
+  }
+
+  private def createPhaseSignalControls: Node = {
+    new HBox {
+      spacing = 20
+      content = List(
+        createPhaseSignalSliders,
+        new VBox {
+          spacing = 20
+          content = List(
+            new CheckBox("Lock relative") { selected <==> UsbCam3825TestUtilityModel.lockPhaseSignals },
+            new Button("Reset") {onAction = () => UsbCam3825TestUtilityModel.ResetPhaseSignals() },
+            new Button("Commit") {
+              disable <== !UsbCam3825TestUtilityModel.phaseSignalsChanged
+              onAction = () => UsbCam3825TestUtilityModel.CommitPhaseSignals()
+            }
+          )
+        }
+      )
+    }
+  }
+
+  private def createPhaseSignalSliders: Node = {
+    new VBox {
+      spacing = 10
+      content = (for (phaseSignal <- UsbCam3825TestUtilityModel.phaseSignals) yield createPhaseSignalSliderPair(phaseSignal)).toList
+    }
+  }
+
+  private def createPhaseSignalSliderPair(phaseSignal: PhaseSignal): Node = {
+    new HBox {
+      spacing = 20
+      content = List(
+        new HBox {
+          spacing = 5
+          content = List(
+            new Label("sel_fall_" + phaseSignal.label) {
+              prefWidth = 110
+            },
+            new Slider {
+              min = 0
+              max = 127
+              value <==> phaseSignal.fall
+            },
+            new Label {
+              prefWidth = 20
+              text <== phaseSignal.fall.asString
+            }
+          )
+        },
+        new HBox {
+          spacing = 10
+          content = List(
+            new Label("sel_rise_" + phaseSignal.label) {
+              prefWidth = 110
+            },
+            new Slider {
+              min = 0
+              max = 127
+              value <==> phaseSignal.rise
+            },
+            new Label {
+              prefWidth = 20
+              text <== phaseSignal.rise.asString
+            }
+          )
+        }
+      )
     }
   }
 

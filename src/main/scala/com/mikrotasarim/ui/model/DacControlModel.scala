@@ -1,7 +1,8 @@
 package com.mikrotasarim.ui.model
 
+import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.MemoryLocation
 import spire.implicits._
-import scalafx.beans.property.{BooleanProperty, DoubleProperty, ObjectProperty, StringProperty}
+import scalafx.beans.property.{BooleanProperty, DoubleProperty, StringProperty}
 
 class DacControlModel(
                        label: String,
@@ -10,7 +11,7 @@ class DacControlModel(
                        val address: Int,
                        valueBits: Int,
                        CommitMethod: (DacControlModel) => Unit
-                       ) {
+                       ) extends MemoryLocation {
 
   def Reset() = {
     value.value = defaultValue
