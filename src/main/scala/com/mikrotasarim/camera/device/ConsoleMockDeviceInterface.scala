@@ -2,7 +2,7 @@ package com.mikrotasarim.camera.device
 
 class ConsoleMockDeviceInterface extends DeviceInterface {
   override def SetWireInValue(wireNumber: Int, value: Long) {
-    println("Wire " + wireNumber + " set to value " + value.toBinaryString)
+    println("Wire " + wireNumber + " set to value " + value)
   }
 
   override def ActivateTriggerIn(address: Int, bit: Int) {
@@ -22,4 +22,7 @@ class ConsoleMockDeviceInterface extends DeviceInterface {
   override def Disconnect() {
     println("Device disconnected.")
   }
+
+  override def SetWireInValue(wireNumber: Int, value: Long, mask: Long): Unit =
+    println("Wire " + wireNumber + " set to value " + value + " with mask " + mask)
 }

@@ -3,11 +3,13 @@ package com.mikrotasarim.ui.model
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.{ConsoleMockDeviceInterface, OpalKellyInterface}
 
+import spire.implicits._
 import scala.collection.immutable.ListMap
 import scalafx.beans.property.{IntegerProperty, BooleanProperty, StringProperty}
 import scalafx.beans.value.ObservableValue
 import scalafx.collections.ObservableBuffer
 
+// TODO: Divide up sub-module models
 object UsbCam3825TestUtilityModel {
 
   var commandFactory: UsbCam3825CommandFactory = _
@@ -36,9 +38,84 @@ object UsbCam3825TestUtilityModel {
     })
   }
 
-  // TODO: Move this into memory location class
+  object ResetControls {
+    val fpgaReset = new BooleanProperty() {
+      value = true
+      onChange(commandFactory.MakeFpgaResetCommand(this.value).Execute())
+    }
+
+    val roicReset = new BooleanProperty() {
+      value = true
+      onChange(commandFactory.MakeRoicResetCommand(this.value).Execute())
+    }
+  }
+
+  // TODO: Move this into MemoryLocation class
   private def CommitMemoryLocation(memoryLocation: MemoryLocation) =
     commandFactory.MakeWriteToAsicMemoryTopCommand(memoryLocation.address, memoryLocation.memoryValue).Execute()
+
+  object TimingGeneratorMainControls extends MemoryLocation {
+    val enable = new BooleanProperty(this, "enable", false) {
+      onChange(CommitMemoryLocation(TimingGeneratorMainControls))
+    }
+
+    val pwRefValues = ListMap(
+      "50%" -> 0,
+      "10n" -> 1,
+      "30n" -> 2,
+      "50n" -> 3
+    )
+
+    val pwRefLabels = ObservableBuffer(pwRefValues.keys.toList)
+
+    val pwOutValues = ListMap(
+      "50%" -> 0,
+      "15n" -> 1
+    )
+
+    val pwOutLabels = ObservableBuffer(pwOutValues.keys.toList)
+
+    val selectedPwRef = new StringProperty("30n") {
+      onChange(CommitMemoryLocation(TimingGeneratorMainControls))
+    }
+
+    val selectedPwOut = new StringProperty("15n") {
+      onChange(CommitMemoryLocation(TimingGeneratorMainControls))
+    }
+
+    override val address: Int = 19
+
+    override def memoryValue: Long = (if (enable.value) 8 else 0) +
+                                     pwOutValues(selectedPwOut.value) * 4 +
+                                     pwRefValues(selectedPwRef.value)
+  }
+
+  object TimingGeneratorVcdlControls extends MemoryLocation {
+
+    val pdCp = new BooleanProperty(this, "pdCp", false) {
+      onChange(CommitMemoryLocation(TimingGeneratorVcdlControls))
+    }
+
+    val pdVcdl = new BooleanProperty(this, "pdVcdl", false) {
+      onChange(CommitMemoryLocation(TimingGeneratorVcdlControls))
+    }
+
+    val vpBiasVcdl = new IntegerProperty(this, "vp", 32) {
+      onChange(CommitMemoryLocation(TimingGeneratorVcdlControls))
+    }
+
+    val vnBiasVcdl = new IntegerProperty(this, "vn", 32) {
+      onChange(CommitMemoryLocation(TimingGeneratorVcdlControls))
+    }
+
+    override val address: Int = 11
+
+    override def memoryValue: Long =
+      (if (pdCp.value) 2 pow 15 else 0) +
+      (if (pdVcdl.value) 2 pow 14 else 0) +
+      vpBiasVcdl.value * (2 pow 7) +
+      vnBiasVcdl.value
+  }
 
   private def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitMemoryLocation)
@@ -183,17 +260,17 @@ object UsbCam3825TestUtilityModel {
     val powerDownTop = new BooleanProperty(this, "top", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}
     val powerDownBot = new BooleanProperty(this, "bot", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}
 
-    val address = 81
+    override val address = 81
 
-    def memoryValue = (if (powerDownBot.value) 1 else 0) + (if (powerDownTop.value) 2 else 0)
+    override def memoryValue = (if (powerDownBot.value) 1 else 0) + (if (powerDownTop.value) 2 else 0)
   }
 
   object BiasGeneratorActivator extends MemoryLocation {
     val switch = new BooleanProperty(this, "switch", false) {onChange(CommitMemoryLocation(BiasGeneratorActivator))}
 
-    val address = 40
+    override val address = 40
 
-    def memoryValue = if (switch.value) 5 else 4
+    override def memoryValue = if (switch.value) 5 else 4
   }
 
   object BiasGeneratorTestSettings extends MemoryLocation {
@@ -262,9 +339,9 @@ object UsbCam3825TestUtilityModel {
 
     val currentTestLabels = ObservableBuffer(currentTests.keys.toList)
 
-    val address = 39
+    override val address = 39
 
-    def memoryValue = Integer.parseInt(voltageTests(selectedVoltageTest.value), 2) * 128 +
+    override def memoryValue = Integer.parseInt(voltageTests(selectedVoltageTest.value), 2) * 128 +
                       Integer.parseInt(currentTests(selectedCurrentTest.value), 2)
   }
 

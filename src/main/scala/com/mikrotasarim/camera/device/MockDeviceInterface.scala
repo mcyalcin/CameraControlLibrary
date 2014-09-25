@@ -22,4 +22,7 @@ class MockDeviceInterface(outputBuffer: StringBuilder) extends DeviceInterface {
   override def Disconnect() {
     outputBuffer.append("Device disconnected.")
   }
+
+  override def SetWireInValue(wireNumber: Int, value: Long, mask: Long): Unit =
+    outputBuffer.append("Wire " + wireNumber + " set to value " + value + " with mask " + mask + "\n")
 }

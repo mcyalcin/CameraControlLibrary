@@ -20,6 +20,25 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     new SimpleCommand(() => device.Disconnect())
   }
 
+  // TODO: These commands require a better reset
+  def MakeFpgaResetCommand(reset: Boolean): Command = {
+    new CompositeCommand(List(
+      MakeResetCommand(if (reset) FpgaReset else 0, 7-FpgaReset),
+      MakeUpdateWireInsCommand()
+    ))
+  }
+
+  def MakeRoicResetCommand(reset: Boolean): Command = {
+    new CompositeCommand(List(
+      MakeResetCommand(if (reset) RoicReset else 0, 7-RoicReset),
+      MakeUpdateWireInsCommand()
+    ))
+  }
+
+  def MakeResetCommand(bit: Long, mask: Long): Command = {
+    new SimpleCommand(() => device.SetWireInValue(ResetWire, bit, mask))
+  }
+
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
     if (startAddress < 0) throw new Exception("Illegal start address")
     if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
@@ -182,7 +201,7 @@ trait UsbCam3825Constants {
 
   // 0xA0 - 0xBF PipeOut
 
-  // Reset bits - these are supposed to set one bit on a 32 bit wire, so we need to use powers of two
+  // Reset bits - these are supposed to set one bit on a 32 bit wire, so powers of two are assigned
   val FpgaReset = 1
   val RoicReset = 2
   val FlashInFifoReset = 4

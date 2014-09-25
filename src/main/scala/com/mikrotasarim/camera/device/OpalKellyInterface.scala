@@ -21,6 +21,8 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
 
   override def SetWireInValue(wireNumber: Int, value: Long): Unit = panel.SetWireInValue(wireNumber, value)
 
+  override def SetWireInValue(wireNumber: Int, value: Long, mask: Long): Unit = panel.SetWireInValue(wireNumber, value, mask)
+
   override def ActivateTriggerIn(address: Int, bit: Int): Unit = panel.ActivateTriggerIn(address, bit)
 
   override def WriteToPipeIn(address: Int, size: Int, data: Array[Byte]): Unit = panel.WriteToPipeIn(address, size, data)
