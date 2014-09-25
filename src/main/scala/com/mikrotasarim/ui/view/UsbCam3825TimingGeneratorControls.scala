@@ -97,6 +97,21 @@ object UsbCam3825TimingGeneratorControls {
                   text <== UsbCam3825TestUtilityModel.TimingGeneratorVcdlControls.vnBiasVcdl.asString
                 }
               )
+            },
+            new HBox {
+              spacing = 10
+              content = List(
+                new Label("sel ibias vcdl"),
+                new Slider {
+                  min = 0
+                  max = 255
+                  value <==> UsbCam3825TestUtilityModel.VcdlBiasCurrent.iBiasVcdl
+                },
+                new Label {
+                  prefWidth = 20
+                  text <== UsbCam3825TestUtilityModel.VcdlBiasCurrent.iBiasVcdl.asString
+                }
+              )
             }
           )
         }

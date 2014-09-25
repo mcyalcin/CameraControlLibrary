@@ -117,6 +117,16 @@ object UsbCam3825TestUtilityModel {
       vnBiasVcdl.value
   }
 
+  object VcdlBiasCurrent extends MemoryLocation {
+    val iBiasVcdl = new IntegerProperty(this, "i", 16) {
+      onChange(CommitMemoryLocation(VcdlBiasCurrent))
+    }
+
+    override val address = 10
+
+    override def memoryValue = iBiasVcdl.value
+  }
+
   private def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitMemoryLocation)
 
