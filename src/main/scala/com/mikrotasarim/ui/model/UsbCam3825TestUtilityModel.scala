@@ -117,6 +117,139 @@ object UsbCam3825TestUtilityModel {
       vnBiasVcdl.value
   }
 
+  object TimingGeneratorAnalogTestControls extends MemoryLocation {
+    val selLfCap = new BooleanProperty(this, "selLfCap", false)
+    selLfCap.onChange(CommitMemoryLocation(this))
+    val enVctrlExt = new BooleanProperty(this, "enVctrlExt", false)
+    enVctrlExt.onChange(CommitMemoryLocation(this))
+    val selVctrl = new IntegerProperty(this, "selVctrl", 2)
+    selVctrl.onChange(CommitMemoryLocation(this))
+
+    val analogCurrentTests = ListMap(
+      "No current test" -> "0000",
+      "itest<0>" -> "1000",
+      "itest<1>" -> "1001",
+      "itest<2>" -> "1010",
+      "itest<3>" -> "1011",
+      "itest_cp" -> "1100",
+      "itest_vi" -> "1101",
+      "itest_tune_p" -> "1110",
+      "itest_tune_n" -> "1111"
+    )
+
+    val analogVoltageTests = ListMap(
+      "No voltage test" -> "0000000",
+      "vdda_dac" -> "1011110",
+      "vssa_dac" -> "1011111",
+      "vpbias" -> "1100000",
+      "vpcas" -> "1100001",
+      "vncas" -> "1100010",
+      "vctrl_test" -> "1100011",
+      "vncas_cp" -> "1100100",
+      "vpcas_cp" -> "1100101",
+      "L" -> "1100110",
+      "H" -> "1100111"
+    )
+
+    val analogCurrentTestLabels = ObservableBuffer(analogCurrentTests.keys.toList)
+    val analogVoltageTestLabels = ObservableBuffer(analogVoltageTests.keys.toList)
+
+    val selectedCurrentTest = new StringProperty("No current test")
+    selectedCurrentTest.onChange(CommitMemoryLocation(this))
+
+    val selectedVoltageTest = new StringProperty("No voltage test")
+    selectedVoltageTest.onChange(CommitMemoryLocation(this))
+
+    override val address: Int = 12
+
+    override def memoryValue: Long =
+      (if (selLfCap.value) 2 pow 15 else 0) +
+      selVctrl.value * (2 pow 12) +
+      (if (enVctrlExt.value) 2 pow 11 else 0) +
+      Integer.parseInt(analogCurrentTests(selectedCurrentTest.value),2) * (2 pow 7) +
+      Integer.parseInt(analogVoltageTests(selectedVoltageTest.value),2)
+  }
+
+  object TimingGeneratorDigitalTestControls extends MemoryLocation {
+
+    val testOutput0 = ListMap(
+      "No signal selected" -> (0,0,0),
+      "ref_clk" -> (1,0,0),
+      "ref_clk_buf" -> (1,0,1),
+      "pga_s_rise" -> (1,1,0),
+      "pga_s_fall" -> (1,1,2)
+    )
+    val testOutput1 = ListMap(
+      "No signal selected" -> (0,0,0),
+      "pga_a_rise" -> (1,0,0),
+      "pga_a_fall" -> (1,0,1),
+      "adc_odd_s_rise" -> (1,1,0),
+      "adc_odd_s_fall" -> (1,1,2)
+    )
+    val testOutput2 = ListMap(
+      "No signal selected" -> (0,0,0),
+      "adc_odd_a_rise" -> (1,0,0),
+      "adc_odd_a_fall" -> (1,0,1),
+      "adc_even_s_rise" -> (1,1,0),
+      "adc_even_s_fall" -> (1,1,2)
+    )
+    val testOutput3 = ListMap(
+      "No signal selected" -> (0,0,0),
+      "adc_even_a_rise" -> (1,0,0),
+      "adc_even_a_fall" -> (1,0,1),
+      "phi_pga_s" -> (1,1,0),
+      "phi_pga_a" -> (1,1,2)
+    )
+    val testOutput4 = ListMap(
+      "No signal selected" -> (0,0,0),
+      "phi_adc_odd_s" -> (1,0,0),
+      "phi_adc_odd_a" -> (1,0,1),
+      "phi_adc_even_s" -> (1,1,0),
+      "phi_adc_even_a" -> (1,1,2)
+    )
+
+    val testOutput0Labels = ObservableBuffer(testOutput0.keys.toList)
+    val testOutput1Labels = ObservableBuffer(testOutput1.keys.toList)
+    val testOutput2Labels = ObservableBuffer(testOutput2.keys.toList)
+    val testOutput3Labels = ObservableBuffer(testOutput3.keys.toList)
+    val testOutput4Labels = ObservableBuffer(testOutput4.keys.toList)
+
+    val selectedTestOutput0 = new StringProperty("No signal selected") {
+      onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
+    }
+    val selectedTestOutput1 = new StringProperty("No signal selected"){
+      onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
+    }
+    val selectedTestOutput2 = new StringProperty("No signal selected"){
+      onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
+    }
+    val selectedTestOutput3 = new StringProperty("No signal selected"){
+      onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
+    }
+    val selectedTestOutput4 = new StringProperty("No signal selected"){
+      onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
+    }
+
+    override val address: Int = 20
+
+    override def memoryValue: Long =
+      List(testOutput0(selectedTestOutput0.value)._1,
+           testOutput1(selectedTestOutput1.value)._1,
+           testOutput2(selectedTestOutput2.value)._1,
+           testOutput3(selectedTestOutput3.value)._1,
+           testOutput4(selectedTestOutput4.value)._1).max * (2 pow 15) +
+      testOutput4(selectedTestOutput4.value)._2 * (2 pow 14) +
+      testOutput3(selectedTestOutput3.value)._2 * (2 pow 13) +
+      testOutput2(selectedTestOutput2.value)._2 * (2 pow 12) +
+      testOutput1(selectedTestOutput1.value)._2 * (2 pow 11) +
+      testOutput0(selectedTestOutput0.value)._2 * (2 pow 10) +
+      testOutput4(selectedTestOutput4.value)._3 * (2 pow 8) +
+      testOutput3(selectedTestOutput3.value)._3 * (2 pow 6) +
+      testOutput2(selectedTestOutput2.value)._3 * (2 pow 4) +
+      testOutput1(selectedTestOutput1.value)._3 * (2 pow 2) +
+      testOutput0(selectedTestOutput0.value)._3
+  }
+
   object VcdlBiasCurrent extends MemoryLocation {
     val iBiasVcdl = new IntegerProperty(this, "i", 16) {
       onChange(CommitMemoryLocation(VcdlBiasCurrent))
@@ -127,17 +260,11 @@ object UsbCam3825TestUtilityModel {
     override def memoryValue = iBiasVcdl.value
   }
 
-  private def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
+  def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitMemoryLocation)
 
-  private def CreateTimingGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
+  def CreateTimingGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 3.3), address, 12, CommitMemoryLocation)
-
-  private def CreateBiasGeneratorCurrentDac(label: String, address: Int, defaultValue: Int) =
-    new DacControlModel(label, defaultValue, (0, 128), address, 7, CommitMemoryLocation)
-
-  private def CreateBiasGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
-    new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitMemoryLocation)
 
   val timingGeneratorVoltageDacs = ObservableBuffer(
     CreateTimingGeneratorVoltageDac("vpcas_cp", 9, 1.65),
@@ -151,6 +278,12 @@ object UsbCam3825TestUtilityModel {
     CreateTimingGeneratorCurrentDac("ibias_vi", 4, 1),
     CreateTimingGeneratorCurrentDac("ibias_vcdl", 3, 6)
   )
+
+  def CreateBiasGeneratorCurrentDac(label: String, address: Int, defaultValue: Int) =
+    new DacControlModel(label, defaultValue, (0, 128), address, 7, CommitMemoryLocation)
+
+  def CreateBiasGeneratorVoltageDac(label: String, address: Int, defaultValue: Double) =
+    new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitMemoryLocation)
 
   val biasGeneratorVoltageDacs = ObservableBuffer(
     CreateBiasGeneratorVoltageDac("vin_p_ref", 80, 1.65),
@@ -355,7 +488,7 @@ object UsbCam3825TestUtilityModel {
                       Integer.parseInt(currentTests(selectedCurrentTest.value), 2)
   }
 
-  abstract class MemoryLocation {
+  trait MemoryLocation {
     val address: Int
     def memoryValue: Long
   }

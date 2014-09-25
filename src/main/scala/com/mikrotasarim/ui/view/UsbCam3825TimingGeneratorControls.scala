@@ -18,6 +18,8 @@ object UsbCam3825TimingGeneratorControls {
         content =
           (createTimingGeneratorMainControls +:
             createTimingGeneratorVcdlControls +:
+            createTimingGeneratorAnalogTestControls +:
+            createTimingGeneratorDigitalTestControls +:
             new Label("Voltage DACs") +:
             createTimingGeneratorVoltageDacControls) ++
             (new Label("Current DACs") +:
@@ -25,6 +27,85 @@ object UsbCam3825TimingGeneratorControls {
             new Label("Phase Signals") :+
             createPhaseSignalControls
       }
+    }
+  }
+
+  private def createTimingGeneratorDigitalTestControls: Node = {
+    new HBox {
+      spacing = 10
+      content = List(
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.testOutput0Labels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.selectedTestOutput0.value = newValue
+          )
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.testOutput1Labels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.selectedTestOutput1.value = newValue
+          )
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.testOutput2Labels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.selectedTestOutput2.value = newValue
+          )
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.testOutput3Labels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.selectedTestOutput3.value = newValue
+          )
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.testOutput4Labels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorDigitalTestControls.selectedTestOutput4.value = newValue
+          )
+        }
+      )
+    }
+  }
+
+  private def createTimingGeneratorAnalogTestControls: Node = {
+    new HBox {
+      spacing = 10
+      content = List(
+        new CheckBox("sel lf cap") {
+          selected <==> UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.selLfCap
+        },
+        // TODO: Create a LabeledValuedSlider class to replace all occurrences of this HBox
+        new HBox {
+          spacing = 10
+          content = List(
+            new Label("sel vctrl"),
+            new Slider {
+              min = 0
+              max = 7
+              value <==> UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.selVctrl
+            },
+            new Label {
+              text <== UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.selVctrl.asString
+            }
+          )
+        },
+        new CheckBox("en vctrl ext") {
+          selected <==> UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.enVctrlExt
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.analogCurrentTestLabels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.selectedCurrentTest.value = newValue
+          )
+        },
+        new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.analogVoltageTestLabels) {
+          selectionModel().selectFirst()
+          selectionModel().selectedItem.onChange(
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorAnalogTestControls.selectedVoltageTest.value = newValue
+          )
+        }
+      )
     }
   }
 
