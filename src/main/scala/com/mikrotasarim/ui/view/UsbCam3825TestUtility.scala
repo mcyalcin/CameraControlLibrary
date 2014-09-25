@@ -1,7 +1,6 @@
 package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.PhaseSignal
 import com.mikrotasarim.utility.DialogMessageStage
 
 import scalafx.Includes._
@@ -58,7 +57,7 @@ object UsbCam3825TestUtility extends JFXApp {
         },
         new Tab {
           text = "ADC Channel"
-          content = createAdcChannelTab
+          content = UsbCam3825AdcChannelControls.createAdcChannelTab
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
         }
@@ -77,13 +76,6 @@ object UsbCam3825TestUtility extends JFXApp {
       content = new Label("Not implemented yet.")
     }
   }
-
-  private def createAdcChannelTab: Node = {
-    new ScrollPane {
-      content = new Label("Not implemented tey.")
-    }
-  }
-
 
   private def createFpgaControlPanel: Node = {
     new ScrollPane {
