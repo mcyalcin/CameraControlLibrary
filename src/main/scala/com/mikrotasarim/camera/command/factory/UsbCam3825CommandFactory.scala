@@ -23,7 +23,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   // TODO: These commands require a better reset
   def MakeFpgaResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (reset) FpgaReset else 0, 7-FpgaReset),
+      MakeResetCommand(if (!reset) FpgaReset else 0, 7-FpgaReset),
       MakeUpdateWireInsCommand()
     ))
   }
@@ -36,7 +36,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   }
 
   def MakeResetCommand(bit: Long, mask: Long): Command = {
-    new SimpleCommand(() => device.SetWireInValue(ResetWire, bit, mask))
+    new SimpleCommand(() => device.SetWireInValue(ResetWire, bit))
   }
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {

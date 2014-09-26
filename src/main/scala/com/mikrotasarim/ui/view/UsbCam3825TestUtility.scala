@@ -39,7 +39,7 @@ object UsbCam3825TestUtility extends JFXApp {
         },
         new Tab {
           text = "Output Stage"
-          content = createOutputStageTab
+          content = UsbCam3825OutputStageControls.createOutputStageTab
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
         },

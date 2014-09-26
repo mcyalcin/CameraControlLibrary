@@ -260,6 +260,11 @@ object UsbCam3825TestUtilityModel {
     override def memoryValue = iBiasVcdl.value
   }
 
+  trait MemoryLocation {
+    val address: Int
+    def memoryValue: Long
+  }
+
   def CreateTimingGeneratorCurrentDac(label: String, address: Int, defaultValue: Double) =
     new DacControlModel(label, defaultValue, (0, 140), address, 7, CommitMemoryLocation)
 
@@ -488,11 +493,6 @@ object UsbCam3825TestUtilityModel {
                       Integer.parseInt(currentTests(selectedCurrentTest.value), 2)
   }
 
-  trait MemoryLocation {
-    val address: Int
-    def memoryValue: Long
-  }
-
   class AdcChannelClockSettings(val address: Int) extends MemoryLocation {
 
     val selAdcClk =
@@ -708,4 +708,54 @@ object UsbCam3825TestUtilityModel {
   val AdcChannelTopSettings = new AdcChannelSettings(21)
 
   val AdcChannelBotSettings = new AdcChannelSettings(82)
+
+  class Pad(val index: Int, val label: String) {
+
+    val cmosLvdsLabels = ObservableBuffer("CMOS", "LVDS")
+    val cmosSelected = new BooleanProperty()
+
+    val power = new IntegerProperty()
+    val singleDifferentialLabels = ObservableBuffer("Single", "Differential")
+    val singleSelected = new BooleanProperty()
+
+    val enableTermination = new BooleanProperty()
+    val powerDown = new BooleanProperty()
+
+    val terminationResolutionLabels = ObservableBuffer("3.5 mA", "7.0 mA")
+    val lowTerminationResolution = new BooleanProperty()
+  }
+
+  object OutputStage {
+
+    val pads = ListMap(
+      "out_ser<0>" -> new Pad(0, "out_ser<0>"),
+      "out_ser<1>" -> new Pad(1, "out_ser<1>"),
+      "fval_pad" -> new Pad(2, "fval_pad"),
+      "data_frame_clk_mux" -> new Pad(3, "data_frame_clk_mux"),
+      "out_data_clk" -> new Pad(4, "out_data_clk"),
+      "dval_pad" -> new Pad(5, "dval_pad"),
+      "out_ser<2>" -> new Pad(6, "out_ser<2>"),
+      "out_ser<3>" -> new Pad(7, "out_ser<3>")
+    )
+    // TODO: Study NumberStringConverter for test memory bindings
+
+    // TODO: Clarify how to define ibiasOp and ibiasDrv
+    val ibiasOp = new IntegerProperty()
+    val ibiasDrv = new IntegerProperty()
+
+    val testDataLabels = ObservableBuffer("Test", "Data")
+    val testSelected = new BooleanProperty()
+
+    val adcTestMemMdacSel = new BooleanProperty()
+    val adcTestSelTop = new BooleanProperty()
+    val adcTestSelBot = new BooleanProperty()
+
+    val clkOutDlySel = new IntegerProperty()
+    val fvalDlySel = new IntegerProperty()
+    val dvalDlySel = new IntegerProperty()
+    val coarseDlySel = new IntegerProperty()
+    val clkInDlkSel = new IntegerProperty()
+  }
+
+  // TODO: Memory location translations for output stage
 }
