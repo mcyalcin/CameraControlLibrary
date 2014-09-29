@@ -3,6 +3,7 @@ package com.mikrotasarim.ui.view
 import com.mikrotasarim.ui.model.DacControlModel
 
 import scalafx.Includes._
+import scalafx.beans.property.IntegerProperty
 import scalafx.scene.Node
 import scalafx.scene.control.{CheckBox, Button, Slider, Label}
 import scalafx.scene.layout.HBox
@@ -53,5 +54,57 @@ object UsbCam3825UiHelper {
         }
       )
     }).toList
+  }
+
+  def createDelaySliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double): Node = {
+    new HBox {
+      spacing = 10
+      content = List(
+        new Label(label) {
+          prefWidth = 100
+        },
+        new Slider {
+          min = mini
+          max = maxi
+          value <==> model
+          snapToTicks = true
+          blockIncrement = 1
+          majorTickUnit = 1
+        },
+        new Label {
+          text <== model.asString
+          prefWidth = 20
+        },
+        new Button("Commit"),
+        new Button("Default")
+      )
+    }
+  }
+
+  def createBiasSliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double): Node = {
+    new HBox {
+      spacing = 10
+      content = List(
+        new Label(label) {
+          prefWidth = 150
+        },
+        new CheckBox,
+        new CheckBox,
+        new Slider {
+          min = mini
+          max = maxi
+          value <==> model
+          snapToTicks = true
+          blockIncrement = 1
+          majorTickUnit = 1
+        },
+        new Label {
+          text <== model.asString
+          prefWidth = 20
+        },
+        new Button("Commit"),
+        new Button("Default")
+      )
+    }
   }
 }

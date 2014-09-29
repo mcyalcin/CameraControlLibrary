@@ -32,34 +32,62 @@ object UsbCam3825TestUtility extends JFXApp {
           closable = false
         },
         new Tab {
-          text = "Memory"
-          content = createMemoryTab
+          text = "ASIC"
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
+          content = new TabPane {
+            tabs = List(
+              new Tab {
+                text = "Digital Controller"
+                content = createMemoryTab
+                closable = false
+              },
+              new Tab {
+                text = "Output Stage"
+                content = UsbCam3825OutputStageControls.createOutputStageTab
+                closable = false
+              },
+              new Tab {
+                text = "Bias Generator"
+                content = UsbCam3825BiasGeneratorControls.createBiasGeneratorTab
+                closable = false
+              },
+              new Tab {
+                text = "Timing Generator"
+                content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
+                closable = false
+              },
+              new Tab {
+                text = "ADC Channel"
+                content = UsbCam3825AdcChannelControls.createAdcChannelTab
+                closable = false
+              }
+            )
+          }
         },
         new Tab {
-          text = "Output Stage"
-          content = UsbCam3825OutputStageControls.createOutputStageTab
+          text = "ROIC"
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
-        },
-        new Tab {
-          text = "Bias Generator"
-          content = UsbCam3825BiasGeneratorControls.createBiasGeneratorTab
-          closable = false
-          disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
-        },
-        new Tab {
-          text = "Timing Generator"
-          content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
-          closable = false
-          disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
-        },
-        new Tab {
-          text = "ADC Channel"
-          content = UsbCam3825AdcChannelControls.createAdcChannelTab
-          closable = false
-          disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
+          content = new TabPane {
+            tabs = List(
+              new Tab {
+                text = "Bias Generator"
+                closable = false
+                content = new ScrollPane
+              },
+              new Tab {
+                text = "Digital Controller"
+                closable = false
+                content = new ScrollPane
+              },
+              new Tab {
+                text = "Readout"
+                closable = false
+                content = new ScrollPane
+              }
+            )
+          }
         }
       )
     }

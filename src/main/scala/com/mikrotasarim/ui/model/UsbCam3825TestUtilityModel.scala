@@ -712,9 +712,9 @@ object UsbCam3825TestUtilityModel {
   class Pad(val index: Int, val label: String) {
 
     val cmosLvdsLabels = ObservableBuffer("CMOS", "LVDS")
-    val cmosSelected = new BooleanProperty()
+    val cmosSelected = BooleanProperty(true)
 
-    val power = new IntegerProperty()
+    val power = IntegerProperty(3)
     val singleDifferentialLabels = ObservableBuffer("Single", "Differential")
     val singleSelected = new BooleanProperty()
 
@@ -728,14 +728,14 @@ object UsbCam3825TestUtilityModel {
   object OutputStage {
 
     val pads = ListMap(
-      "out_ser<0>" -> new Pad(0, "out_ser<0>"),
-      "out_ser<1>" -> new Pad(1, "out_ser<1>"),
-      "fval_pad" -> new Pad(2, "fval_pad"),
-      "data_frame_clk_mux" -> new Pad(3, "data_frame_clk_mux"),
-      "out_data_clk" -> new Pad(4, "out_data_clk"),
-      "dval_pad" -> new Pad(5, "dval_pad"),
-      "out_ser<2>" -> new Pad(6, "out_ser<2>"),
-      "out_ser<3>" -> new Pad(7, "out_ser<3>")
+      "out_ser<0>" -> new Pad(0, "Serial Output 0"),
+      "out_ser<1>" -> new Pad(1, "Serial Output 1"),
+      "fval_pad" -> new Pad(2, "Frame Valid"),
+      "data_frame_clk_mux" -> new Pad(3, "Data Frame Clock"),
+      "out_data_clk" -> new Pad(4, "Output Data Clock"),
+      "dval_pad" -> new Pad(5, "Data Valid"),
+      "out_ser<2>" -> new Pad(6, "Serial Output 2"),
+      "out_ser<3>" -> new Pad(7, "Serial Output 3")
     )
     // TODO: Study NumberStringConverter for test memory bindings
 
@@ -746,15 +746,44 @@ object UsbCam3825TestUtilityModel {
     val testDataLabels = ObservableBuffer("Test", "Data")
     val testSelected = new BooleanProperty()
 
+    val msbLsbLabels = ObservableBuffer("Least Significant Bit", "Most Significant Bit")
+    val msbSelected = new BooleanProperty()
+
+    val inputLabels = ObservableBuffer("ADC0", "ADC1", "ADC2", "ADC3")
+
+    val dataFrameClock = StringProperty("ADC0")
+
+    val selectedOutputs = ObservableBuffer(
+      StringProperty("ADC0"),
+      StringProperty("ADC1"),
+      StringProperty("ADC2"),
+      StringProperty("ADC3")
+    )
+
+    msbSelected.onChange(
+      msbLsbHelpText.value =
+        if (msbSelected.value)
+          "0..13 dval fval"
+        else
+          "fval dval 13..0"
+    )
+
+    val msbLsbHelpText = StringProperty("fval dval 13..0")
+
+    val adcTestMemMdacLabels = ObservableBuffer("Memory", "MDac")
     val adcTestMemMdacSel = new BooleanProperty()
+
+    val adcTestSelTopLabels = ObservableBuffer("ADC1 Test", "ADC0 Test")
     val adcTestSelTop = new BooleanProperty()
+
+    val adcTestSelBotLabels = ObservableBuffer("ADC3 Test", "ADC2 Test")
     val adcTestSelBot = new BooleanProperty()
 
     val clkOutDlySel = new IntegerProperty()
     val fvalDlySel = new IntegerProperty()
     val dvalDlySel = new IntegerProperty()
     val coarseDlySel = new IntegerProperty()
-    val clkInDlkSel = new IntegerProperty()
+    val clkInDlySel = new IntegerProperty()
   }
 
   // TODO: Memory location translations for output stage
