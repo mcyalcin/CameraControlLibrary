@@ -5,7 +5,7 @@ import com.mikrotasarim.ui.model.DacControlModel
 import scalafx.Includes._
 import scalafx.beans.property.IntegerProperty
 import scalafx.scene.Node
-import scalafx.scene.control.{CheckBox, Button, Slider, Label}
+import scalafx.scene.control._
 import scalafx.scene.layout.HBox
 import scalafx.util.converter.DoubleStringConverter
 
@@ -88,8 +88,7 @@ object UsbCam3825UiHelper {
         new Label(label) {
           prefWidth = 150
         },
-        new CheckBox,
-        new CheckBox,
+        new ChoiceBox,
         new Slider {
           min = mini
           max = maxi

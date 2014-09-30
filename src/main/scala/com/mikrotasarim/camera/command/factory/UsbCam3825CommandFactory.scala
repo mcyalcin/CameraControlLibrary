@@ -30,13 +30,14 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
   def MakeRoicResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (reset) RoicReset else 0, 7-RoicReset),
+      MakeResetCommand(if (reset) ChipReset else 0, 7-ChipReset),
       MakeUpdateWireInsCommand()
     ))
   }
 
+  // TODO: Fix resets
   def MakeResetCommand(bit: Long, mask: Long): Command = {
-    new SimpleCommand(() => device.SetWireInValue(ResetWire, bit))
+    new SimpleCommand(() => device.SetWireInValue(ResetWire, bit, mask))
   }
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
@@ -203,7 +204,7 @@ trait UsbCam3825Constants {
 
   // Reset bits - these are supposed to set one bit on a 32 bit wire, so powers of two are assigned
   val FpgaReset = 1
-  val RoicReset = 2
+  val ChipReset = 2
   val FlashInFifoReset = 4
 
   // Commands to be used on AsicCommandWire

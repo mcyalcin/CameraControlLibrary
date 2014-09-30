@@ -35,58 +35,83 @@ object UsbCam3825TestUtility extends JFXApp {
           text = "ASIC"
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
-          content = new TabPane {
-            tabs = List(
-              new Tab {
-                text = "Digital Controller"
-                content = createMemoryTab
-                closable = false
-              },
-              new Tab {
-                text = "Output Stage"
-                content = UsbCam3825OutputStageControls.createOutputStageTab
-                closable = false
-              },
-              new Tab {
-                text = "Bias Generator"
-                content = UsbCam3825BiasGeneratorControls.createBiasGeneratorTab
-                closable = false
-              },
-              new Tab {
-                text = "Timing Generator"
-                content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
-                closable = false
-              },
-              new Tab {
-                text = "ADC Channel"
-                content = UsbCam3825AdcChannelControls.createAdcChannelTab
-                closable = false
-              }
-            )
+          content = new BorderPane {
+            left = new VBox {
+              padding = Insets(10)
+              spacing = 10
+              content = List(
+                new Button("Reset"),
+                new Button("Memory Map")
+              )
+            }
+            center = new TabPane {
+              tabs = List(
+                new Tab {
+                  text = "Digital Controller"
+                  content = createMemoryTab
+                  closable = false
+                },
+                new Tab {
+                  text = "Output Stage"
+                  content = UsbCam3825OutputStageControls.createOutputStageTab
+                  closable = false
+                },
+                new Tab {
+                  text = "Bias Generator"
+                  content = UsbCam3825BiasGeneratorControls.createBiasGeneratorTab
+                  closable = false
+                },
+                new Tab {
+                  text = "Timing Generator"
+                  content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
+                  closable = false
+                },
+                new Tab {
+                  text = "ADC Channel"
+                  content = UsbCam3825AdcChannelControls.createAdcChannelTab
+                  closable = false
+                }
+              )
+            }
           }
         },
         new Tab {
           text = "ROIC"
           closable = false
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
-          content = new TabPane {
-            tabs = List(
-              new Tab {
-                text = "Bias Generator"
-                closable = false
-                content = new ScrollPane
-              },
-              new Tab {
-                text = "Digital Controller"
-                closable = false
-                content = new ScrollPane
-              },
-              new Tab {
-                text = "Readout"
-                closable = false
-                content = new ScrollPane
-              }
-            )
+          content = new BorderPane {
+            left = new VBox {
+              padding = Insets(10)
+              spacing = 10
+              content = List(
+                new Button("Reset"),
+                new Button("Memory Map")
+              )
+            }
+            center = new TabPane {
+              tabs = List(
+                new Tab {
+                  text = "Digital Controller"
+                  closable = false
+                  content = new ScrollPane
+                },
+                new Tab {
+                  text = "Bias Generator"
+                  closable = false
+                  content = new ScrollPane
+                },
+                new Tab {
+                  text = "RefMem/NUC"
+                  closable = false
+                  content = new ScrollPane
+                },
+                new Tab {
+                  text = "Readout"
+                  closable = false
+                  content = new ScrollPane
+                }
+              )
+            }
           }
         }
       )
@@ -131,7 +156,7 @@ object UsbCam3825TestUtility extends JFXApp {
           selected <==> UsbCam3825TestUtilityModel.ResetControls.fpgaReset
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
         },
-        new CheckBox("ROIC Reset") {
+        new CheckBox("ASIC Reset") {
           selected <==> UsbCam3825TestUtilityModel.ResetControls.roicReset
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed ||
             UsbCam3825TestUtilityModel.ResetControls.fpgaReset

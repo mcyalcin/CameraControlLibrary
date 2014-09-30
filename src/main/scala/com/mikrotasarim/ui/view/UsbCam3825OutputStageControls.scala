@@ -1,7 +1,6 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.Pad
+import com.mikrotasarim.ui.model.OutputStage._
 
 import scalafx.Includes._
 import scalafx.geometry.Insets
@@ -22,19 +21,19 @@ object UsbCam3825OutputStageControls {
               new HBox {
                 spacing = 10
                 content = List(
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("out_ser<0>")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("out_ser<1>")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("out_ser<2>")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("out_ser<3>"))
+                  createPadControls(pads(0)),
+                  createPadControls(pads(1)),
+                  createPadControls(pads(2)),
+                  createPadControls(pads(3))
                 )
               },
               new HBox {
                 spacing = 10
                 content = List(
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("fval_pad")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("data_frame_clk_mux")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("out_data_clk")),
-                  createPadControls(UsbCam3825TestUtilityModel.OutputStage.pads("dval_pad"))
+                  createPadControls(pads(4)),
+                  createPadControls(pads(5)),
+                  createPadControls(pads(6)),
+                  createPadControls(pads(7))
                 )
               }
             )
@@ -45,22 +44,22 @@ object UsbCam3825OutputStageControls {
               new VBox {
                 spacing = 10
                 content = List(
-                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS OpAmp Bias Current", UsbCam3825TestUtilityModel.OutputStage.ibiasOp, 0, 511),
-                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS Driver Bias Current", UsbCam3825TestUtilityModel.OutputStage.ibiasDrv, 0, 511),
+                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS OpAmp Bias Current", ibiasOp, 0, 511),
+                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS Driver Bias Current", ibiasDrv, 0, 511),
                   new HBox {
                     spacing = 10
                     content = List(
-                      new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.testDataLabels) {
+                      new ChoiceBox(testDataLabels) {
                         selectionModel().selectLast()
                         selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => UsbCam3825TestUtilityModel.OutputStage.testSelected.value = "Test" == newValue
+                          (_, _, newValue) => testSelected.value = "Test" == newValue
                         )
                       },
-                      new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacLabels) {
-                        disable <== !UsbCam3825TestUtilityModel.OutputStage.testSelected
+                      new ChoiceBox(adcTestMemMdacLabels) {
+                        disable <== !testSelected
                         selectionModel().selectLast()
                         selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacSel.value = "Memory" == newValue
+                          (_, _, newValue) => adcTestMemMdacSel.value = "Memory" == newValue
                         )
                       }
                     )
@@ -68,15 +67,15 @@ object UsbCam3825OutputStageControls {
                   new HBox {
                     spacing = 20
                     content = List(
-                      new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.adcTestSelTopLabels) {
-                        disable <== !UsbCam3825TestUtilityModel.OutputStage.testSelected || UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacSel
+                      new ChoiceBox(adcTestSelTopLabels) {
+                        disable <== !testSelected || adcTestMemMdacSel
                         selectionModel().selectLast()
                         selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => UsbCam3825TestUtilityModel.OutputStage.adcTestSelTop.value = UsbCam3825TestUtilityModel.OutputStage.adcTestSelTopLabels(0) == newValue
+                          (_, _, newValue) => adcTestSelTop.value = adcTestSelTopLabels(0) == newValue
                         )
                       },
                       new HBox {
-                        disable <== !UsbCam3825TestUtilityModel.OutputStage.testSelected || !UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacSel
+                        disable <== !testSelected || !adcTestMemMdacSel
                         spacing = 10
                         content = List(
                           new Label("ADC Test Memory Top") {
@@ -96,15 +95,15 @@ object UsbCam3825OutputStageControls {
                   new HBox {
                     spacing = 20
                     content = List(
-                      new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.adcTestSelBotLabels) {
-                        disable <== !UsbCam3825TestUtilityModel.OutputStage.testSelected || UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacSel
+                      new ChoiceBox(adcTestSelBotLabels) {
+                        disable <== !testSelected || adcTestMemMdacSel
                         selectionModel().selectLast()
                         selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => UsbCam3825TestUtilityModel.OutputStage.adcTestSelBot.value = UsbCam3825TestUtilityModel.OutputStage.adcTestSelBotLabels(0) == newValue
+                          (_, _, newValue) => adcTestSelBot.value = adcTestSelBotLabels(0) == newValue
                         )
                       },
                       new HBox {
-                        disable <== !UsbCam3825TestUtilityModel.OutputStage.testSelected || !UsbCam3825TestUtilityModel.OutputStage.adcTestMemMdacSel
+                        disable <== !testSelected || !adcTestMemMdacSel
                         spacing = 10
                         content = List(
                           new Label("ADC Test Memory Bottom") {
@@ -124,14 +123,14 @@ object UsbCam3825OutputStageControls {
                   new HBox {
                     spacing = 10
                     content = List(
-                      new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.msbLsbLabels) {
+                      new ChoiceBox(msbLsbLabels) {
                         selectionModel().selectLast()
                         selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => UsbCam3825TestUtilityModel.OutputStage.msbSelected.value = "Least Significant Bit" == newValue
+                          (_, _, newValue) => msbSelected.value = "Least Significant Bit" == newValue
                         )
                       },
                       new Label {
-                        text <== UsbCam3825TestUtilityModel.OutputStage.msbLsbHelpText
+                        text <== msbLsbHelpText
                       }
                     )
                   }
@@ -147,8 +146,8 @@ object UsbCam3825OutputStageControls {
                         spacing = 10
                         content = List(
                           new Label("Data Frame Clock"),
-                          new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.inputLabels) {
-                            value <==> UsbCam3825TestUtilityModel.OutputStage.dataFrameClock
+                          new ChoiceBox(inputLabels) {
+                            value <==> dataFrameClock
                           }
                         )
                       },
@@ -168,11 +167,11 @@ object UsbCam3825OutputStageControls {
               new VBox {
                 spacing = 10
                 content = List(
-                  UsbCam3825UiHelper.createDelaySliderGroup("Clock Out Delay", UsbCam3825TestUtilityModel.OutputStage.clkOutDlySel, 0, 63),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Frame Valid Delay", UsbCam3825TestUtilityModel.OutputStage.fvalDlySel, 0, 15),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Data Valid Delay", UsbCam3825TestUtilityModel.OutputStage.dvalDlySel, 0, 15),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Coarse Delay", UsbCam3825TestUtilityModel.OutputStage.coarseDlySel, 0, 7),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Clock In Delay", UsbCam3825TestUtilityModel.OutputStage.clkInDlySel, 0, 63)
+                  UsbCam3825UiHelper.createDelaySliderGroup("Clock Out Delay", clkOutDlySel, 0, 63),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Frame Valid Delay", fvalDlySel, 0, 15),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Data Valid Delay", dvalDlySel, 0, 15),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Coarse Delay", coarseDlySel, 0, 7),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Clock In Delay", clkInDlySel, 0, 63)
                 )
               }
             )
@@ -189,8 +188,8 @@ object UsbCam3825OutputStageControls {
       style = "-fx-border-color: darkgrey;-fx-border-radius: 10;"
       content = List(
         new Label("Serial Output " + channel),
-        new ChoiceBox(UsbCam3825TestUtilityModel.OutputStage.inputLabels) {
-          value <==> UsbCam3825TestUtilityModel.OutputStage.selectedOutputs(channel)
+        new ChoiceBox(inputLabels) {
+          value <==> selectedOutputs(channel)
         }
       )
     }
@@ -219,8 +218,13 @@ object UsbCam3825OutputStageControls {
         new HBox {
           spacing = 10
           content = List(
-            new Button("Commit"),
-            new Button("Default")
+            new Button("Commit") {
+              onAction = () => pad.Commit()
+              disable <== !pad.changed
+            },
+            new Button("Default") {
+              onAction = () => pad.Reset()
+            }
           )
         }
       )

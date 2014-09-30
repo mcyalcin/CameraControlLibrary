@@ -12,7 +12,7 @@ import scalafx.collections.ObservableBuffer
 // TODO: Divide up sub-module models
 object UsbCam3825TestUtilityModel {
 
-  var commandFactory: UsbCam3825CommandFactory = _
+  var commandFactory: UsbCam3825CommandFactory = new UsbCam3825CommandFactory(new ConsoleMockDeviceInterface)
 
   def DeployBitfile() {
     val device = new OpalKellyInterface(bitfilePath.value)
@@ -50,7 +50,6 @@ object UsbCam3825TestUtilityModel {
     }
   }
 
-  // TODO: The dependency to commandFactory here impedes partitioning of this. Think of a good refactoring.
   def CommitMemoryLocation(memoryLocation: MemoryLocation) =
     commandFactory.MakeWriteToAsicMemoryTopCommand(memoryLocation.address, memoryLocation.memoryValue).Execute()
 
@@ -708,83 +707,4 @@ object UsbCam3825TestUtilityModel {
   val AdcChannelTopSettings = new AdcChannelSettings(21)
 
   val AdcChannelBotSettings = new AdcChannelSettings(82)
-
-  class Pad(val index: Int, val label: String) {
-
-    val cmosLvdsLabels = ObservableBuffer("CMOS", "LVDS")
-    val cmosSelected = BooleanProperty(true)
-
-    val power = IntegerProperty(3)
-    val singleDifferentialLabels = ObservableBuffer("Single", "Differential")
-    val singleSelected = new BooleanProperty()
-
-    val enableTermination = new BooleanProperty()
-    val powerDown = new BooleanProperty()
-
-    val terminationResolutionLabels = ObservableBuffer("3.5 mA", "7.0 mA")
-    val lowTerminationResolution = new BooleanProperty()
-  }
-
-  object OutputStage {
-
-    val pads = ListMap(
-      "out_ser<0>" -> new Pad(0, "Serial Output 0"),
-      "out_ser<1>" -> new Pad(1, "Serial Output 1"),
-      "fval_pad" -> new Pad(2, "Frame Valid"),
-      "data_frame_clk_mux" -> new Pad(3, "Data Frame Clock"),
-      "out_data_clk" -> new Pad(4, "Output Data Clock"),
-      "dval_pad" -> new Pad(5, "Data Valid"),
-      "out_ser<2>" -> new Pad(6, "Serial Output 2"),
-      "out_ser<3>" -> new Pad(7, "Serial Output 3")
-    )
-    // TODO: Study NumberStringConverter for test memory bindings
-
-    // TODO: Clarify how to define ibiasOp and ibiasDrv
-    val ibiasOp = new IntegerProperty()
-    val ibiasDrv = new IntegerProperty()
-
-    val testDataLabels = ObservableBuffer("Test", "Data")
-    val testSelected = new BooleanProperty()
-
-    val msbLsbLabels = ObservableBuffer("Least Significant Bit", "Most Significant Bit")
-    val msbSelected = new BooleanProperty()
-
-    val inputLabels = ObservableBuffer("ADC0", "ADC1", "ADC2", "ADC3")
-
-    val dataFrameClock = StringProperty("ADC0")
-
-    val selectedOutputs = ObservableBuffer(
-      StringProperty("ADC0"),
-      StringProperty("ADC1"),
-      StringProperty("ADC2"),
-      StringProperty("ADC3")
-    )
-
-    msbSelected.onChange(
-      msbLsbHelpText.value =
-        if (msbSelected.value)
-          "0..13 dval fval"
-        else
-          "fval dval 13..0"
-    )
-
-    val msbLsbHelpText = StringProperty("fval dval 13..0")
-
-    val adcTestMemMdacLabels = ObservableBuffer("Memory", "MDac")
-    val adcTestMemMdacSel = new BooleanProperty()
-
-    val adcTestSelTopLabels = ObservableBuffer("ADC1 Test", "ADC0 Test")
-    val adcTestSelTop = new BooleanProperty()
-
-    val adcTestSelBotLabels = ObservableBuffer("ADC3 Test", "ADC2 Test")
-    val adcTestSelBot = new BooleanProperty()
-
-    val clkOutDlySel = new IntegerProperty()
-    val fvalDlySel = new IntegerProperty()
-    val dvalDlySel = new IntegerProperty()
-    val coarseDlySel = new IntegerProperty()
-    val clkInDlySel = new IntegerProperty()
-  }
-
-  // TODO: Memory location translations for output stage
 }
