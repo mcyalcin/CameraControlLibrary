@@ -56,7 +56,7 @@ object UsbCam3825BiasGeneratorControls {
             )
           },
           new VBox {
-            spacing = 10
+            spacing = 5
             content = List(new Label("Voltage DACs")) ++ createBiasGeneratorVoltageDacControls
           }
         )

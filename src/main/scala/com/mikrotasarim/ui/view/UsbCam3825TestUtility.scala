@@ -23,6 +23,8 @@ object UsbCam3825TestUtility extends JFXApp {
     }
   }
 
+  stage.setMaximized(true)
+
   private def createTabs: TabPane = {
     new TabPane {
       tabs = List(
