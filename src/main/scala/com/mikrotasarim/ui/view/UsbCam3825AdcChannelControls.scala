@@ -24,6 +24,8 @@ object UsbCam3825AdcChannelControls {
 
   private def createAdcChannel(label: String, model: AdcChannelSettings): Node =
     new HBox {
+      padding = Insets(10)
+      style = "-fx-border-color: darkgrey; -fx-border-radius: 10;"
       spacing = 10
       content = List(
         createAdcChannelCommonControls(label, model),
@@ -157,6 +159,8 @@ object UsbCam3825AdcChannelControls {
 
   private def createAdcChannelControls(model: AdcChannelSettings, index: Int): Node =
     new VBox {
+      padding = Insets(10)
+      style = "-fx-border-color: darkgrey; -fx-border-radius: 10;"
       spacing = 10
       content = List(
         new Label("Channel " + index),

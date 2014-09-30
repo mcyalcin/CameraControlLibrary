@@ -10,7 +10,7 @@ import scalafx.scene.layout.{HBox, VBox}
 
 object UsbCam3825OutputStageControls {
 
-  def createTestMemoryControl(label: String, model: AdcTestMemory) = {
+  private def createTestMemoryControl(label: String, model: AdcTestMemory) = {
     List(
       new Label("ADC Test Memory " + label) {
         prefWidth = 150
@@ -182,7 +182,7 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createMuxControl(channel: Int): Node = {
+  private def createMuxControl(channel: Int): Node = {
     new VBox {
       padding = Insets(5)
       spacing = 10
@@ -196,7 +196,7 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createPadControls(pad: Pad): Node = {
+  private def createPadControls(pad: Pad): Node = {
     val cmosLvdsChoiceBox = new ChoiceBox(pad.cmosLvdsLabels) {
       selectionModel().selectFirst()
       selectionModel().selectedItem.onChange(
@@ -251,7 +251,7 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createCmosControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
+  private def createCmosControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
     new VBox {
       spacing = 10
       disable <== !pad.cmosSelected
@@ -272,7 +272,7 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createLvdsControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
+  private def createLvdsControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
     new VBox {
       spacing = 10
       disable <== pad.cmosSelected
