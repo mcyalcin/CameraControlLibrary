@@ -50,7 +50,7 @@ object OutputStage {
       if (committedCmosSelected != cmosSelected.value || committedEnableTermination != enableTermination.value) {
         committedCmosSelected = cmosSelected.value
         committedEnableTermination = enableTermination.value
-        CommitMemoryLocation(memoryLocations(31))
+        CommitMemoryLocation(termCmosWord)
       }
       if (committedPower != power.value || committedSingleSelected != singleSelected.value) {
         committedSingleSelected = singleSelected.value
@@ -60,7 +60,7 @@ object OutputStage {
       if (committedPowerDown != powerDown.value || committedLowResolution != lowTerminationResolution.value) {
         committedPowerDown = powerDown.value
         committedLowResolution = lowTerminationResolution.value
-        CommitMemoryLocation(memoryLocations(32))
+        CommitMemoryLocation(pdResWord)
       }
       changed.value = false
     }
@@ -141,13 +141,23 @@ object OutputStage {
 
   val testDataLabels = ObservableBuffer("Test", "Data")
   val testSelected = new BooleanProperty()
+  testSelected.onChange(CommitMemoryLocation(muxWord))
 
   val msbLsbLabels = ObservableBuffer("Least Significant Bit", "Most Significant Bit")
   val msbSelected = new BooleanProperty()
+  msbSelected.onChange(CommitMemoryLocation(muxWord))
 
-  val inputLabels = ObservableBuffer("ADC0", "ADC1", "ADC2", "ADC3")
+  val inputs = ListMap(
+    "ADC0" -> "00",
+    "ADC1" -> "01",
+    "ADC2" -> "10",
+    "ADC3" -> "11"
+  )
+
+  val inputLabels = ObservableBuffer(inputs.keys.toList)
 
   val dataFrameClock = StringProperty("ADC0")
+  dataFrameClock.onChange(CommitMemoryLocation(muxWord))
 
   val selectedOutputs = ObservableBuffer(
     StringProperty("ADC0"),
@@ -155,6 +165,10 @@ object OutputStage {
     StringProperty("ADC2"),
     StringProperty("ADC3")
   )
+  selectedOutputs(0).onChange(CommitMemoryLocation(muxWord))
+  selectedOutputs(1).onChange(CommitMemoryLocation(muxWord))
+  selectedOutputs(2).onChange(CommitMemoryLocation(muxWord))
+  selectedOutputs(3).onChange(CommitMemoryLocation(muxWord))
 
   msbSelected.onChange(
     msbLsbHelpText.value =
@@ -168,18 +182,15 @@ object OutputStage {
 
   val adcTestMemMdacLabels = ObservableBuffer("Memory", "MDac")
   val adcTestMemMdacSel = BooleanProperty(value = false)
+  adcTestMemMdacSel.onChange(CommitMemoryLocation(muxWord))
 
   val adcTestSelTopLabels = ObservableBuffer("ADC1 Test", "ADC0 Test")
   val adcTestSelTop = BooleanProperty(value = false)
+  adcTestSelTop.onChange(CommitMemoryLocation(muxWord))
 
   val adcTestSelBotLabels = ObservableBuffer("ADC3 Test", "ADC2 Test")
   val adcTestSelBot = BooleanProperty(value = false)
-
-  val clkOutDlySel = IntegerProperty(0)
-  val fvalDlySel = IntegerProperty(0)
-  val dvalDlySel = IntegerProperty(0)
-  val coarseDlySel = IntegerProperty(0)
-  val clkInDlySel = IntegerProperty(0)
+  adcTestSelBot.onChange(CommitMemoryLocation(muxWord))
 
   val opAmpBias = new BiasCurrent(33, 8, 67.22)
   val driverBias = new BiasCurrent(34, 16, 163)
@@ -195,24 +206,160 @@ object OutputStage {
 
     override def memoryValue = {
       padMap.keys.toList.filter(_.committedEnableTermination).map(p => 2 pow (8 + padMap(p)._3)).sum +
-      padMap.keys.toList.filter(_.committedCmosSelected).map(2 pow padMap(_)._3).sum
+        padMap.keys.toList.filter(_.committedCmosSelected).map(2 pow padMap(_)._3).sum
     }
   }
 
+  // TODO: Refactor this eyesore
   object pdResWord extends MemoryLocation {
     override val address = 32
 
     override def memoryValue = {
       padMap.keys.toList.filter(_.committedPowerDown).map(p => 2 pow (8 + padMap(p)._3)).sum +
-      padMap.keys.toList.filter(_.committedLowResolution).map(2 pow padMap(_)._3).sum
+        padMap.keys.toList.filter(_.committedLowResolution).map(2 pow padMap(_)._3).sum
     }
   }
 
-  // TODO: Memory location translations for output stage
+  object muxWord extends MemoryLocation {
+    override val address = 35
+
+    override def memoryValue = {
+      (if (adcTestMemMdacSel.value) 2 pow 14 else 0) +
+        (if (msbSelected.value) 2 pow 13 else 0) +
+        (if (testSelected.value) 2 pow 12 else 0) +
+        (if (adcTestSelTop.value) 2 pow 11 else 0) +
+        (if (adcTestSelBot.value) 2 pow 10 else 0) +
+        Integer.parseInt(inputs(dataFrameClock.value), 2) * (2 pow 8) +
+        Integer.parseInt(inputs(selectedOutputs(3).value), 2) * (2 pow 6) +
+        Integer.parseInt(inputs(selectedOutputs(2).value), 2) * (2 pow 4) +
+        Integer.parseInt(inputs(selectedOutputs(1).value), 2) * (2 pow 2) +
+        Integer.parseInt(inputs(selectedOutputs(0).value), 2)
+    }
+  }
+
+  object delayWord extends MemoryLocation {
+
+    val clkOutDlySel = IntegerProperty(15)
+    clkOutDlySel.onChange(clkOutDlyChanged.value = committedClkOutDly != clkOutDlySel.value)
+    val clkOutDlyChanged = BooleanProperty(value = false)
+    var committedClkOutDly = 15
+
+    val fvalDlySel = IntegerProperty(1)
+    fvalDlySel.onChange(fvalDlyChanged.value = committedFval != fvalDlySel.value)
+    val fvalDlyChanged = BooleanProperty(value = false)
+    var committedFval = 1
+
+    val dvalDlySel = IntegerProperty(1)
+    dvalDlySel.onChange(dvalDlyChanged.value = committedDval != dvalDlySel.value)
+    val dvalDlyChanged = BooleanProperty(value = false)
+    var committedDval = 1
+
+    override val address: Int = 36
+
+    override def memoryValue: Long =
+      clkOutDlySel.value * (2 pow 8) +
+        fvalDlySel.value * (2 pow 4) +
+        dvalDlySel.value
+
+    def CommitCod() = {
+      committedClkOutDly = clkOutDlySel.value
+      CommitMemoryLocation(this)
+      clkOutDlyChanged.value = false
+    }
+
+    def CommitFval() = {
+      committedFval = fvalDlySel.value
+      CommitMemoryLocation(this)
+      fvalDlyChanged.value = false
+    }
+
+    def CommitDval() = {
+      committedDval = dvalDlySel.value
+      CommitMemoryLocation(this)
+      dvalDlyChanged.value = false
+    }
+
+    def ResetCod() = {
+      clkOutDlySel.value = 15
+      CommitCod()
+    }
+
+    def ResetFval() = {
+      fvalDlySel.value = 1
+      CommitFval()
+    }
+
+    def ResetDval() = {
+      dvalDlySel.value = 1
+      CommitDval()
+    }
+  }
+
+  // TODO: Refactor this eyesore
+  object moreDelayWord extends MemoryLocation {
+
+    val coarseDlySel = IntegerProperty(2)
+    coarseDlySel.onChange(coarseDlyChanged.value = committedCoarseDly != coarseDlySel.value)
+    val coarseDlyChanged = BooleanProperty(value = false)
+    var committedCoarseDly = 2
+
+    val clkInDlySel = IntegerProperty(5)
+    clkInDlySel.onChange(clkInDlyChanged.value = committedClkInDelay != clkInDlySel.value)
+    val clkInDlyChanged = BooleanProperty(value = false)
+    var committedClkInDelay = 5
+
+    override val address: Int = 37
+
+    override def memoryValue: Long =
+      coarseDlySel.value * (2 pow 8) + clkInDlySel.value
+
+    def CommitCoarseDelay() = {
+      committedCoarseDly = coarseDlySel.value
+      coarseDlyChanged.value = false
+      CommitMemoryLocation(this)
+    }
+
+    def CommitClkInDelay() = {
+      committedClkInDelay = clkInDlySel.value
+      clkInDlyChanged.value = false
+      CommitMemoryLocation(this)
+    }
+
+    def ResetCoarseDelay() = {
+      coarseDlySel.value = 2
+      CommitCoarseDelay()
+    }
+
+    def ResetClkInDelay() = {
+      clkInDlySel.value = 5
+      CommitClkInDelay()
+    }
+  }
+
+  // TODO: Is this really necessary?
   val memoryLocations = Map(
     29 -> new drivePowerMemoryLocation(29),
-    30 -> new drivePowerMemoryLocation(30),
-    31 -> termCmosWord,
-    32 -> pdResWord
+    30 -> new drivePowerMemoryLocation(30)
   )
+
+  class AdcTestMemory(val label: String, override val address: Int) extends MemoryLocation {
+
+    val hexString = StringProperty("0000")
+    val binaryString = StringProperty("0000 0000 0000 0000")
+
+    def Commit() = {
+      val string = String.format("%16s", Integer.parseInt(hexString.value, 16).toBinaryString).replace(' ', '0')
+      binaryString.value =
+        string.substring(0, 4) + " " +
+        string.substring(4, 8) + " " +
+        string.substring(8, 12) + " " +
+        string.substring(12, 16) + " "
+      CommitMemoryLocation(this)
+    }
+
+    override def memoryValue = Integer.parseInt(hexString.value, 16)
+  }
+
+  val adcTestMemoryTop = new AdcTestMemory("Top", 28)
+  val adcTestMemoryBot = new AdcTestMemory("Bottom", 38)
 }

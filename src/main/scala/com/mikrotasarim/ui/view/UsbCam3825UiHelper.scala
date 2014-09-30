@@ -4,7 +4,7 @@ import com.mikrotasarim.ui.model.DacControlModel
 import com.mikrotasarim.ui.model.OutputStage.BiasCurrent
 
 import scalafx.Includes._
-import scalafx.beans.property.IntegerProperty
+import scalafx.beans.property.{BooleanProperty, IntegerProperty}
 import scalafx.scene.Node
 import scalafx.scene.control._
 import scalafx.scene.layout.HBox
@@ -58,7 +58,7 @@ object UsbCam3825UiHelper {
     }).toList
   }
 
-  def createDelaySliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double): Node = {
+  def createDelaySliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double, commitMethod: () => Unit, resetMethod: () => Unit, changed: BooleanProperty): Node = {
     new HBox {
       spacing = 10
       content = List(
@@ -77,8 +77,13 @@ object UsbCam3825UiHelper {
           text <== model.asString
           prefWidth = 20
         },
-        new Button("Commit"),
-        new Button("Default")
+        new Button("Commit") {
+          disable <== !changed
+          onAction = commitMethod
+        },
+        new Button("Default") {
+          onAction = resetMethod
+        }
       )
     }
   }

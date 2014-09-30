@@ -9,6 +9,29 @@ import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 
 object UsbCam3825OutputStageControls {
+
+  def createTestMemoryControl(label: String, model: AdcTestMemory) = {
+    List(
+      new Label("ADC Test Memory " + label) {
+        prefWidth = 150
+      },
+      new TextField {
+        text.onChange({
+          text.value = text.value.replaceAll("[^a-fA-F0-9]", "")
+          if (text.value.length > 4) text.value = text.value.substring(0, 4)
+        })
+        text <==> model.hexString
+        prefColumnCount = 4
+      },
+      new Button("Commit") {
+        onAction = () => model.Commit()
+      },
+      new Label {
+        text <== model.binaryString
+      }
+    )
+  }
+
   def createOutputStageTab: Node = {
     new ScrollPane {
       content = new VBox {
@@ -77,18 +100,7 @@ object UsbCam3825OutputStageControls {
                       new HBox {
                         disable <== !testSelected || !adcTestMemMdacSel
                         spacing = 10
-                        content = List(
-                          new Label("ADC Test Memory Top") {
-                            prefWidth = 150
-                          },
-                          new TextField {
-                            text.onChange(if (text.value.length > 4) text.value = text.value.substring(0, 4))
-                            prefColumnCount = 4
-                          },
-                          new Label {
-                            text = "0000 0000 0000 0000"
-                          }
-                        )
+                        content = createTestMemoryControl("Top", adcTestMemoryTop)
                       }
                     )
                   },
@@ -105,18 +117,7 @@ object UsbCam3825OutputStageControls {
                       new HBox {
                         disable <== !testSelected || !adcTestMemMdacSel
                         spacing = 10
-                        content = List(
-                          new Label("ADC Test Memory Bottom") {
-                            prefWidth = 150
-                          },
-                          new TextField {
-                            text.onChange(if (text.value.length > 4) text.value = text.value.substring(0, 4))
-                            prefColumnCount = 4
-                          },
-                          new Label {
-                            text = "0000 0000 0000 0000"
-                          }
-                        )
+                        content = createTestMemoryControl("Bottom", adcTestMemoryBot)
                       }
                     )
                   },
@@ -167,11 +168,11 @@ object UsbCam3825OutputStageControls {
               new VBox {
                 spacing = 10
                 content = List(
-                  UsbCam3825UiHelper.createDelaySliderGroup("Clock Out Delay", clkOutDlySel, 0, 63),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Frame Valid Delay", fvalDlySel, 0, 15),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Data Valid Delay", dvalDlySel, 0, 15),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Coarse Delay", coarseDlySel, 0, 7),
-                  UsbCam3825UiHelper.createDelaySliderGroup("Clock In Delay", clkInDlySel, 0, 63)
+                  UsbCam3825UiHelper.createDelaySliderGroup("Clock Out Delay", delayWord.clkOutDlySel, 0, 63, delayWord.CommitCod, delayWord.ResetCod, delayWord.clkOutDlyChanged),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Frame Valid Delay", delayWord.fvalDlySel, 0, 15, delayWord.CommitFval, delayWord.ResetFval, delayWord.fvalDlyChanged),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Data Valid Delay", delayWord.dvalDlySel, 0, 15, delayWord.CommitDval, delayWord.ResetDval, delayWord.dvalDlyChanged),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Coarse Delay", moreDelayWord.coarseDlySel, 0, 7, moreDelayWord.CommitCoarseDelay, moreDelayWord.ResetCoarseDelay, moreDelayWord.coarseDlyChanged),
+                  UsbCam3825UiHelper.createDelaySliderGroup("Clock In Delay", moreDelayWord.clkInDlySel, 0, 63, moreDelayWord.CommitClkInDelay, moreDelayWord.ResetClkInDelay, moreDelayWord.clkInDlyChanged)
                 )
               }
             )
