@@ -50,7 +50,7 @@ object UsbCam3825TestUtility extends JFXApp {
               tabs = List(
                 new Tab {
                   text = "Digital Controller"
-                  content = createMemoryTab
+                  content = UsbCam3825DigitalControllerControls.createDigitalControllerTab
                   closable = false
                 },
                 new Tab {

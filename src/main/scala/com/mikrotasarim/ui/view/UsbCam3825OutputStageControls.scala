@@ -36,7 +36,7 @@ object UsbCam3825OutputStageControls {
     new ScrollPane {
       content = new VBox {
         padding = Insets(10)
-        spacing = 20
+        spacing = 15
         content = List(
           new VBox {
             spacing = 10
@@ -166,7 +166,7 @@ object UsbCam3825OutputStageControls {
                 )
               },
               new VBox {
-                spacing = 10
+                spacing = 5
                 content = List(
                   UsbCam3825UiHelper.createDelaySliderGroup("Clock Out Delay", delayWord.clkOutDlySel, 0, 63, delayWord.CommitCod, delayWord.ResetCod, delayWord.clkOutDlyChanged),
                   UsbCam3825UiHelper.createDelaySliderGroup("Frame Valid Delay", delayWord.fvalDlySel, 0, 15, delayWord.CommitFval, delayWord.ResetFval, delayWord.fvalDlyChanged),
