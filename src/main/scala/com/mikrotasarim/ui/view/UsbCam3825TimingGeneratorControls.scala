@@ -125,7 +125,7 @@ object UsbCam3825TimingGeneratorControls {
         new ChoiceBox(UsbCam3825TestUtilityModel.TimingGeneratorMainControls.pwRefLabels) {
           selectionModel().select(2)
           selectionModel().selectedItem.onChange(
-            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorMainControls.selectedPwOut.value = newValue
+            (_, _, newValue) => UsbCam3825TestUtilityModel.TimingGeneratorMainControls.selectedPwRef.value = newValue
           )
         }
       )
