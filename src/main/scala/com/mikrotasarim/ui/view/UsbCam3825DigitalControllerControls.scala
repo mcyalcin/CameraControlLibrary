@@ -1,6 +1,7 @@
 package com.mikrotasarim.ui.view
 
 import scalafx.Includes._
+import scalafx.beans.property.BooleanProperty
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.Node
@@ -19,7 +20,28 @@ object UsbCam3825DigitalControllerControls {
 
   private def createOtherControls = new VBox {
     spacing = 10
-    content = List(createDigtestControls)
+    content = List(createSignalControls, createDigtestControls)
+  }
+
+  private def createSignalControls = new HBox {
+    spacing = 10
+    content = List(
+      createLabeledBooleanDropdown("Pixel Clock", internalRoicLabels, internalPixelClock),
+      createLabeledBooleanDropdown("Dval/Fval ", internalRoicLabels, internalDvalFval)
+    )
+  }
+
+  private def createLabeledBooleanDropdown(label: String, optionLabels: ObservableBuffer[String], binding: BooleanProperty) = new VBox {
+    spacing = 5
+    content = List(
+      new Label(label),
+      new ChoiceBox(optionLabels) {
+        selectionModel().selectLast()
+        selectionModel().selectedItem.onChange(
+          (_, _, newValue) => binding.value = newValue == optionLabels(0)
+        )
+      }
+    )
   }
 
   private def createDigtestControls = new HBox {
@@ -34,7 +56,7 @@ object UsbCam3825DigitalControllerControls {
       new ChoiceBox(ObservableBuffer(digTestOptions(index).keys.toList)) {
         selectionModel().selectFirst()
         selectionModel().selectedItem.onChange(
-          (_,_,newValue) => digTestSelection(index).value = newValue
+          (_, _, newValue) => digTestSelection(index).value = newValue
         )
       }
     )

@@ -148,4 +148,10 @@ object DigitalController {
     }
     CommitMemoryLocation(word)
   }
+
+  val internalRoicLabels = ObservableBuffer("Internal", "ROIC")
+  val internalPixelClock = BooleanProperty(value = false)
+  val internalDvalFval = BooleanProperty(value = false)
+
+  // TODO: Memory mapping of word 105
 }
