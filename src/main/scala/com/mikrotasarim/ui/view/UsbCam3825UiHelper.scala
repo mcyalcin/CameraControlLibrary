@@ -1,12 +1,14 @@
 package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.DacControlModel
+import com.mikrotasarim.ui.model.OutputStage.BiasCurrent
 
 import scalafx.Includes._
 import scalafx.beans.property.IntegerProperty
 import scalafx.scene.Node
 import scalafx.scene.control._
 import scalafx.scene.layout.HBox
+import scalafx.scene.paint.Color
 import scalafx.util.converter.DoubleStringConverter
 
 object UsbCam3825UiHelper {
@@ -81,28 +83,51 @@ object UsbCam3825UiHelper {
     }
   }
 
-  def createBiasSliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double): Node = {
+  def createBiasSliderGroup(label: String, model: BiasCurrent, mini: Double, maxi: Double): Node = {
+    val choiceBox = new ChoiceBox(model.resLabels) {
+      selectionModel().select(1)
+      selectionModel().selectedItem.onChange(
+        model.resolution.value = selectionModel().selectedItem.value
+      )
+    }
     new HBox {
       spacing = 10
       content = List(
         new Label(label) {
           prefWidth = 150
         },
-        new ChoiceBox,
+        choiceBox,
         new Slider {
           min = mini
           max = maxi
-          value <==> model
+          value <==> model.sliderValue
           snapToTicks = true
           blockIncrement = 1
           majorTickUnit = 1
         },
         new Label {
-          text <== model.asString
-          prefWidth = 20
+          text <== model.displayValue.asString("%3.2f") + " uA"
+          prefWidth = 60
+          text.onChange((_,_,_) =>
+            if (model.displayValue.value > model.maxValue) {
+              textFill = Color.RED
+              tooltip = "Max safe current is 163 uA"
+            } else {
+              textFill = Color.BLACK
+              tooltip = null
+            }
+          )
         },
-        new Button("Commit"),
-        new Button("Default")
+        new Button("Commit") {
+          disable <== !model.changed
+          onAction = () => model.Commit()
+        },
+        new Button("Default") {
+          onAction = () => {
+            choiceBox.selectionModel().select(1)
+            model.Reset()
+          }
+        }
       )
     }
   }

@@ -76,18 +76,54 @@ object OutputStage {
     }
   }
 
-  class BiasCurrent(override val address: Int) extends MemoryLocation {
+  class BiasCurrent(override val address: Int, val initValue: Int, val maxValue: Double) extends MemoryLocation {
     val resolutions = ListMap(
-      3.125 -> "10",
-      6.25 -> "01",
+      3.125 -> "01",
+      6.25 -> "10",
       9.375 -> "11"
     )
 
     val resLabels = ObservableBuffer(resolutions.keys.toList)
 
-    val resolution = DoubleProperty(3.125)
+    val resolution = DoubleProperty(6.25)
 
-    override def memoryValue = _
+    val displayValue = DoubleProperty(resolution.value * initValue)
+
+    val sliderValue = IntegerProperty(initValue)
+
+    resolution.onChange({
+      sliderValue.value = displayValue.value / resolution.value
+      UpdateDisplayValue()
+    })
+
+    sliderValue.onChange(
+      UpdateDisplayValue()
+    )
+
+    def UpdateDisplayValue() = {
+      changed.value = true
+      displayValue.value = sliderValue.value * resolution.value
+      if (displayValue.value > maxValue) {
+        sliderValue.value = maxValue / resolution.value
+        displayValue.value = sliderValue.value * resolution.value
+      }
+    }
+
+    val changed = BooleanProperty(value = false)
+
+    def Commit() = {
+      CommitMemoryLocation(this)
+      changed.value = false
+    }
+
+    def Reset() = {
+      sliderValue.value = initValue
+      Commit()
+    }
+
+    override def memoryValue = {
+      sliderValue.value * 2 + Integer.parseInt(resolutions(resolution.value), 2) * (2 pow 7)
+    }
   }
 
   val padMap = ListMap(
@@ -102,11 +138,6 @@ object OutputStage {
   )
 
   val pads = padMap.keys.toList
-
-  // TODO: Study NumberStringConverter for test memory bindings
-
-  val ibiasOp = new IntegerProperty()
-  val ibiasDrv = new IntegerProperty()
 
   val testDataLabels = ObservableBuffer("Test", "Data")
   val testSelected = new BooleanProperty()
@@ -150,12 +181,12 @@ object OutputStage {
   val coarseDlySel = IntegerProperty(0)
   val clkInDlySel = IntegerProperty(0)
 
-  val opAmpBias = new BiasCurrent(33)
-  val driverBias = new BiasCurrent(34)
+  val opAmpBias = new BiasCurrent(33, 8, 67.22)
+  val driverBias = new BiasCurrent(34, 16, 163)
 
   class drivePowerMemoryLocation(override val address: Int) extends MemoryLocation {
     override def memoryValue: Long = {
-      padMap.keys.toList.filter(padMap(_)._1 == address).map(p => p.power.value * (2 pow padMap(p)._2)).sum
+      padMap.keys.toList.filter(padMap(_)._1 == address).map(p => p.committedPower * (2 pow padMap(p)._2)).sum
     }
   }
 
@@ -163,8 +194,8 @@ object OutputStage {
     override val address = 31
 
     override def memoryValue = {
-      padMap.keys.toList.filter(_.enableTermination.value).map(p => 2 pow (8 + padMap(p)._3)).sum +
-      padMap.keys.toList.filter(_.cmosSelected.value).map(2 pow padMap(_)._3).sum
+      padMap.keys.toList.filter(_.committedEnableTermination).map(p => 2 pow (8 + padMap(p)._3)).sum +
+      padMap.keys.toList.filter(_.committedCmosSelected).map(2 pow padMap(_)._3).sum
     }
   }
 
@@ -172,8 +203,8 @@ object OutputStage {
     override val address = 32
 
     override def memoryValue = {
-      padMap.keys.toList.filter(_.powerDown.value).map(p => 2 pow (8 + padMap(p)._3)).sum +
-      padMap.keys.toList.filter(_.lowTerminationResolution.value).map(2 pow padMap(_)._3).sum
+      padMap.keys.toList.filter(_.committedPowerDown).map(p => 2 pow (8 + padMap(p)._3)).sum +
+      padMap.keys.toList.filter(_.committedLowResolution).map(2 pow padMap(_)._3).sum
     }
   }
 

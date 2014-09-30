@@ -44,8 +44,8 @@ object UsbCam3825OutputStageControls {
               new VBox {
                 spacing = 10
                 content = List(
-                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS OpAmp Bias Current", ibiasOp, 0, 511),
-                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS Driver Bias Current", ibiasDrv, 0, 511),
+                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS OpAmp Bias Current", opAmpBias, 0, 63),
+                  UsbCam3825UiHelper.createBiasSliderGroup("LVDS Driver Bias Current", driverBias, 0, 63),
                   new HBox {
                     spacing = 10
                     content = List(
@@ -196,23 +196,37 @@ object UsbCam3825OutputStageControls {
   }
 
   def createPadControls(pad: Pad): Node = {
+    val cmosLvdsChoiceBox = new ChoiceBox(pad.cmosLvdsLabels) {
+      selectionModel().selectFirst()
+      selectionModel().selectedItem.onChange(
+        (_, _, newValue) => pad.cmosSelected.value = newValue == "CMOS"
+      )
+    }
+    val singleDifferentialChoiceBox = new ChoiceBox(pad.singleDifferentialLabels) {
+      selectionModel().selectLast()
+      selectionModel().selectedItem.onChange(
+        (_, _, newValue) => pad.singleSelected.value = newValue == "Single"
+      )
+    }
+    val terminationResolutionChoiceBox = new ChoiceBox(pad.terminationResolutionLabels) {
+      selectionModel().selectLast()
+      selectionModel().selectedItem.onChange(
+        (_, _, newValue) => pad.lowTerminationResolution.value = newValue == "3.5 mA"
+      )
+    }
+
     new VBox {
       padding = Insets(8)
       style = "-fx-border-color: darkgrey; -fx-border-radius: 10;"
       spacing = 10
       content = List(
         new Label(pad.label),
-        new ChoiceBox(pad.cmosLvdsLabels) {
-          selectionModel().selectFirst()
-          selectionModel().selectedItem.onChange(
-            (_, _, newValue) => pad.cmosSelected.value = newValue == "CMOS"
-          )
-        },
+        cmosLvdsChoiceBox,
         new HBox {
           spacing = 10
           content = List(
-            createCmosControls(pad),
-            createLvdsControls(pad)
+            createCmosControls(pad, singleDifferentialChoiceBox),
+            createLvdsControls(pad, terminationResolutionChoiceBox)
           )
         },
         new HBox {
@@ -223,7 +237,12 @@ object UsbCam3825OutputStageControls {
               disable <== !pad.changed
             },
             new Button("Default") {
-              onAction = () => pad.Reset()
+              onAction = () => {
+                cmosLvdsChoiceBox.selectionModel().selectFirst()
+                singleDifferentialChoiceBox.selectionModel().selectLast()
+                terminationResolutionChoiceBox.selectionModel().selectLast()
+                pad.Reset()
+              }
             }
           )
         }
@@ -231,17 +250,12 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createCmosControls(pad: Pad): Node = {
+  def createCmosControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
     new VBox {
       spacing = 10
       disable <== !pad.cmosSelected
       content = List(
-        new ChoiceBox(pad.singleDifferentialLabels) {
-          selectionModel().selectLast()
-          selectionModel().selectedItem.onChange(
-            (_, _, newValue) => pad.singleSelected.value = newValue == "Single"
-          )
-        },
+        choiceBox,
         new Slider {
           min = 0
           max = 3
@@ -257,7 +271,7 @@ object UsbCam3825OutputStageControls {
     }
   }
 
-  def createLvdsControls(pad: Pad): Node = {
+  def createLvdsControls(pad: Pad, choiceBox: ChoiceBox[String]): Node = {
     new VBox {
       spacing = 10
       disable <== pad.cmosSelected
@@ -265,12 +279,7 @@ object UsbCam3825OutputStageControls {
         new CheckBox("Enable Termination") {
           selected <==> pad.enableTermination
         },
-        new ChoiceBox(pad.terminationResolutionLabels) {
-          selectionModel().selectLast()
-          selectionModel().selectedItem.onChange(
-            (_, _, newValue) => pad.lowTerminationResolution.value = newValue == "3.5 mA"
-          )
-        },
+        choiceBox,
         new CheckBox("Power Down") {
           selected <==> pad.powerDown
         }
