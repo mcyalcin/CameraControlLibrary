@@ -37,4 +37,8 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
   def IsFrontPanelEnabled(): Boolean = panel.IsFrontPanelEnabled()
 
   def Disconnect(): Unit = panel.delete()
+
+  override def GetWireOutValue(address: Int): Long = panel.GetWireOutValue(address)
+
+  override def UpdateWireOuts(): Unit = panel.UpdateWireOuts()
 }

@@ -5,8 +5,18 @@ import com.mikrotasarim.camera.device._
 
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
-  // TODO: Work out how to implement read commands.
-  def MakeReadFromAsicMemoryTopCommand() = ???
+  def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
+    println(address)
+    new CompositeCommand(
+      GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
+      GenerateCommitWireInCommands :+
+      new SimpleCommand(() => {
+        device.UpdateWireOuts()
+        val data = device.GetWireOutValue(ReadWire)
+        callback(data)
+      })
+    )
+  }
 
   def MakeReadFromAsicMemoryBottomCommand() = ???
 
@@ -23,14 +33,14 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   // TODO: These commands require a better reset
   def MakeFpgaResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (!reset) FpgaReset else 0, 7-FpgaReset),
+      MakeResetCommand(if (!reset) FpgaReset else 0, FpgaReset),
       MakeUpdateWireInsCommand()
     ))
   }
 
   def MakeRoicResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (reset) ChipReset else 0, 7-ChipReset),
+      MakeResetCommand(if (!reset) ChipReset else 0, ChipReset),
       MakeUpdateWireInsCommand()
     ))
   }
@@ -95,7 +105,10 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     if (address < 0 || address > 255) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands
+      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands ++
+      (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
+      // Test bla
+      :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(String.format("%16s",a.toBinaryString).replace(' ', '0')))
     )
   }
 
@@ -103,15 +116,18 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     if (address < 0 || address > 127) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
-      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryBotCommand) ++ GenerateCommitWireInCommands
+      GenerateWriteWireInCommands(address, value, WriteToAsicMemoryBotCommand) ++ GenerateCommitWireInCommands ++
+      (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
     )
   }
 
   def MakeWriteToRoicMemoryCommand(address: Int, value: Int): Command = {
     if (address < 0 || address > 127) throw new Exception("Illegal address")
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
+
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToRoicMemoryCommand) ++ GenerateCommitWireInCommands
+
     )
   }
 
@@ -159,6 +175,11 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
       MakeSetWireInValueCommand(DataWire, value))
   }
 
+  private def GenerateReadWireOutCommands(address: Long, command: Int): List[Command] = {
+    List(MakeSetWireInValueCommand(AsicCommandWire, command),
+      MakeSetWireInValueCommand(AddressWire, address))
+  }
+
   private def GenerateCommitWireInCommands: List[Command] = {
     List(
       MakeUpdateWireInsCommand(),
@@ -191,6 +212,8 @@ trait UsbCam3825Constants {
   val DataWire = 0x03
 
   // 0x20 - 0x3F WireOut
+  val ReadWire = 0x20
+
   // 0x40 - 0x5F TriggerIn
   val TriggerWire = 0x40
 

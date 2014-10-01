@@ -1,6 +1,8 @@
 package com.mikrotasarim.camera.device
 
 trait DeviceInterface {
+  def UpdateWireOuts()
+  def GetWireOutValue(address: Int): Long
   def SetWireInValue(wireNumber: Int, value: Long)
   def SetWireInValue(wireNumber: Int, value: Long, mask: Long)
   def ActivateTriggerIn(address: Int, bit: Int)

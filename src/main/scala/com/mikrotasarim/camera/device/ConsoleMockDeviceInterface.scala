@@ -25,4 +25,11 @@ class ConsoleMockDeviceInterface extends DeviceInterface {
 
   override def SetWireInValue(wireNumber: Int, value: Long, mask: Long): Unit =
     println("Wire " + wireNumber + " set to value " + value + " with mask " + mask)
+
+  override def GetWireOutValue(address: Int): Long = {
+    println(address + " read")
+    0
+  }
+
+  override def UpdateWireOuts(): Unit = println("Wire Outs Updated")
 }
