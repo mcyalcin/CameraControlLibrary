@@ -1,7 +1,7 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.AdcChannelSettings
+import com.mikrotasarim.ui.model.AdcChannel.AdcChannelSettings
+import com.mikrotasarim.ui.model.AdcChannel._
 
 import scalafx.Includes._
 import scalafx.geometry.Insets
@@ -9,6 +9,7 @@ import scalafx.scene.Node
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 
+// TODO: Refactor sliders
 object UsbCam3825AdcChannelControls {
   def createAdcChannelTab: Node =
     new ScrollPane {
@@ -16,8 +17,8 @@ object UsbCam3825AdcChannelControls {
         padding = Insets(10)
         spacing = 30
         content = List(
-          createAdcChannel("Top", UsbCam3825TestUtilityModel.AdcChannelTopSettings),
-          createAdcChannel("Bottom", UsbCam3825TestUtilityModel.AdcChannelBotSettings)
+          createAdcChannel("Top", AdcChannelTopSettings),
+          createAdcChannel("Bottom", AdcChannelBotSettings)
         )
       }
     }
