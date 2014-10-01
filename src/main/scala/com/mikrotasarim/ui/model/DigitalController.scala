@@ -34,6 +34,7 @@ object DigitalController {
     val value = digPadDrives.filter(_.address == addr).map(d => (2 pow d.offset) * d.committedStrength).sum
     val word = new MemoryLocation {
       override def memoryValue: Long = value
+
       override val address: Int = addr
     }
     CommitMemoryLocation(word)
@@ -141,9 +142,10 @@ object DigitalController {
   digTestSelection(1).onChange(CommitDigTest())
 
   def CommitDigTest() = {
-    val value = Integer.parseInt(digTest0Options(digTestSelection(0).value), 2) + Integer.parseInt(digTest0Options(digTestSelection(1).value), 2) * (2 pow 8)
+    val value = Integer.parseInt(digTestOptions(0)(digTestSelection(0).value), 2) + Integer.parseInt(digTestOptions(1)(digTestSelection(1).value), 2) * (2 pow 8)
     val word = new MemoryLocation {
       override def memoryValue: Long = value
+
       override val address: Int = 106
     }
     CommitMemoryLocation(word)
@@ -151,7 +153,30 @@ object DigitalController {
 
   val internalRoicLabels = ObservableBuffer("Internal", "ROIC")
   val internalPixelClock = BooleanProperty(value = false)
+  internalPixelClock.onChange(CommitSwitches())
   val internalDvalFval = BooleanProperty(value = false)
+  internalDvalFval.onChange(CommitSwitches())
 
-  // TODO: Memory mapping of word 105
+  val clockSpeedLabels = ObservableBuffer("Slow", "Fast")
+  val slowFlashClock = BooleanProperty(value = false)
+  slowFlashClock.onChange(CommitSwitches())
+
+  val frameStartSelected = BooleanProperty(value = false)
+  frameStartSelected.onChange(CommitSwitches())
+  val autoSelected = BooleanProperty(value = false)
+  autoSelected.onChange(CommitSwitches())
+
+  def CommitSwitches() = {
+    val value = (if (frameStartSelected.value) 16 else 0) +
+      (if (!slowFlashClock.value) 8 else 0) +
+      (if (internalDvalFval.value) 4 else 0) +
+      (if (internalPixelClock.value) 2 else 0) +
+      (if (autoSelected.value) 1 else 0)
+    val word = new MemoryLocation {
+      override def memoryValue: Long = value
+
+      override val address: Int = 105
+    }
+    CommitMemoryLocation(word)
+  }
 }

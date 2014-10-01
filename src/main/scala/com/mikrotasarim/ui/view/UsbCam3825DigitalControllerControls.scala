@@ -5,7 +5,7 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.Node
-import scalafx.scene.control.{ChoiceBox, Button, Slider, Label}
+import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 
 import com.mikrotasarim.ui.model.DigitalController._
@@ -20,18 +20,32 @@ object UsbCam3825DigitalControllerControls {
 
   private def createOtherControls = new VBox {
     spacing = 10
-    content = List(createSignalControls, createDigtestControls)
+    content = List(createCheckBoxes, createSignalControls, createDigtestControls)
+  }
+
+  private def createCheckBoxes = new HBox {
+    spacing = 10
+    content = List(
+      new CheckBox("Frame Start") {
+        selected <==> frameStartSelected
+      },
+      new CheckBox("Auto") {
+        selected <==> autoSelected
+      }
+    )
   }
 
   private def createSignalControls = new HBox {
     spacing = 10
     content = List(
+      createLabeledBooleanDropdown("Flash Clock", clockSpeedLabels, slowFlashClock),
       createLabeledBooleanDropdown("Pixel Clock", internalRoicLabels, internalPixelClock),
       createLabeledBooleanDropdown("Dval/Fval ", internalRoicLabels, internalDvalFval)
     )
   }
 
   private def createLabeledBooleanDropdown(label: String, optionLabels: ObservableBuffer[String], binding: BooleanProperty) = new VBox {
+    prefWidth = 80
     spacing = 5
     content = List(
       new Label(label),

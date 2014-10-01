@@ -42,7 +42,9 @@ object UsbCam3825TestUtility extends JFXApp {
               padding = Insets(10)
               spacing = 10
               content = List(
-                new Button("Reset"),
+                new Button("Reset") {
+                  disable = true
+                },
                 new Button("Memory Map")
               )
             }
