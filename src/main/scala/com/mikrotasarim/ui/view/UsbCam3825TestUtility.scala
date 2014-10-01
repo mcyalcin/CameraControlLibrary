@@ -44,6 +44,7 @@ object UsbCam3825TestUtility extends JFXApp {
               content = List(
                 new Button("Reset") {
                   disable = true
+                  tooltip = "Not Implemented Yet"
                 },
                 new Button("Memory Map")
               )
@@ -82,7 +83,9 @@ object UsbCam3825TestUtility extends JFXApp {
         new Tab {
           text = "ROIC"
           closable = false
-          disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
+//          disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
+          disable = true
+          tooltip = "Not Implemented Yet"
           content = new BorderPane {
             left = new VBox {
               padding = Insets(10)
