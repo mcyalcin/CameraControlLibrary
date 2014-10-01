@@ -6,21 +6,41 @@ import com.mikrotasarim.camera.device._
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
   def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
-    println(address)
+
     new CompositeCommand(
       GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
-      GenerateCommitWireInCommands :+
-      new SimpleCommand(() => {
-        device.UpdateWireOuts()
-        val data = device.GetWireOutValue(ReadWire)
-        callback(data)
-      })
+        GenerateCommitWireInCommands :+
+        new SimpleCommand(() => {
+          device.UpdateWireOuts()
+          val data = device.GetWireOutValue(ReadWire)
+          callback(data)
+        })
     )
   }
 
-  def MakeReadFromAsicMemoryBottomCommand() = ???
+  def MakeReadFromAsicMemoryBottomCommand(address: Int, callback: (Long) => Unit): Command = {
+    new CompositeCommand(
+      GenerateReadWireOutCommands(address, ReadFromAsicMemoryBotCommand) ++
+        GenerateCommitWireInCommands :+
+        new SimpleCommand(() => {
+          device.UpdateWireOuts()
+          val data = device.GetWireOutValue(ReadWire)
+          callback(data)
+        })
+    )
+  }
 
-  def MakeReadFromRoicMemoryCommand() = ???
+  def MakeReadFromRoicMemoryCommand(address: Int, callback: (Long) => Unit): Command = {
+    new CompositeCommand(
+      GenerateReadWireOutCommands(address, ReadFromRoicMemoryCommand) ++
+        GenerateCommitWireInCommands :+
+        new SimpleCommand(() => {
+          device.UpdateWireOuts()
+          val data = device.GetWireOutValue(ReadWire)
+          callback(data)
+        })
+    )
+  }
 
   def MakeReadFromFlashMemoryCommand() = ???
 
@@ -30,7 +50,6 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     new SimpleCommand(() => device.Disconnect())
   }
 
-  // TODO: These commands require a better reset
   def MakeFpgaResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
       MakeResetCommand(if (!reset) FpgaReset else 0, FpgaReset),
@@ -45,7 +64,6 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     ))
   }
 
-  // TODO: Fix resets
   def MakeResetCommand(bit: Long, mask: Long): Command = {
     new SimpleCommand(() => device.SetWireInValue(ResetWire, bit, mask))
   }
@@ -106,9 +124,9 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands ++
-      (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
-      // Test bla
-      :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(String.format("%16s",a.toBinaryString).replace(' ', '0')))
+        (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
+        // Test bla
+        :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(address + " -> " + String.format("%16s", a.toBinaryString).replace(' ', '0')))
     )
   }
 
@@ -117,7 +135,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     if (value < 0 || value > 65535) throw new Exception("Illegal value")
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToAsicMemoryBotCommand) ++ GenerateCommitWireInCommands ++
-      (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
+        (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
     )
   }
 
@@ -258,5 +276,5 @@ trait UsbCam3825Constants {
   val ReadNucTriggerBit = 3
 
   val FlashBlockSize = 256
-  val FlashMemoryMaxAddress = 0x1000000-1
+  val FlashMemoryMaxAddress = 0x1000000 - 1
 }
