@@ -1,5 +1,6 @@
 package com.mikrotasarim.ui.view
 
+import com.mikrotasarim.ui.view.UsbCam3825UiHelper._
 import com.mikrotasarim.ui.model.TimingGenerator._
 
 import scalafx.Includes._
@@ -74,21 +75,7 @@ object UsbCam3825TimingGeneratorControls {
         new CheckBox("sel lf cap") {
           selected <==> TimingGeneratorAnalogTestControls.selLfCap
         },
-        // TODO: Create a LabeledValuedSlider class to replace all occurrences of this HBox
-        new HBox {
-          spacing = 10
-          content = List(
-            new Label("sel vctrl"),
-            new Slider {
-              min = 0
-              max = 7
-              value <==> TimingGeneratorAnalogTestControls.selVctrl
-            },
-            new Label {
-              text <== TimingGeneratorAnalogTestControls.selVctrl.asString
-            }
-          )
-        },
+        createLabeledSnappingSliderGroup("sel vctrl", TimingGeneratorAnalogTestControls.selVctrl, 0, 7, 1),
         new CheckBox("en vctrl ext") {
           selected <==> TimingGeneratorAnalogTestControls.enVctrlExt
         },
@@ -148,51 +135,9 @@ object UsbCam3825TimingGeneratorControls {
         new HBox {
           spacing = 10
           content = List(
-            new HBox {
-              spacing = 10
-              content = List(
-                new Label("sel vpbias vcdl"),
-                new Slider {
-                  min = 0
-                  max = 127
-                  value <==> TimingGeneratorVcdlControls.vpBiasVcdl
-                },
-                new Label {
-                  prefWidth = 20
-                  text <== TimingGeneratorVcdlControls.vpBiasVcdl.asString
-                }
-              )
-            },
-            new HBox {
-              spacing = 10
-              content = List(
-                new Label("sel vnbias vcdl"),
-                new Slider {
-                  min = 0
-                  max = 127
-                  value <==> TimingGeneratorVcdlControls.vnBiasVcdl
-                },
-                new Label {
-                  prefWidth = 20
-                  text <== TimingGeneratorVcdlControls.vnBiasVcdl.asString
-                }
-              )
-            },
-            new HBox {
-              spacing = 10
-              content = List(
-                new Label("sel ibias vcdl"),
-                new Slider {
-                  min = 0
-                  max = 255
-                  value <==> VcdlBiasCurrent.iBiasVcdl
-                },
-                new Label {
-                  prefWidth = 20
-                  text <== VcdlBiasCurrent.iBiasVcdl.asString
-                }
-              )
-            }
+            createLabeledSnappingSliderGroup("sel vpbias vcdl", TimingGeneratorVcdlControls.vpBiasVcdl, 0, 127, 1),
+            createLabeledSnappingSliderGroup("sel vnbias vcdl", TimingGeneratorVcdlControls.vnBiasVcdl, 0, 127, 1),
+            createLabeledSnappingSliderGroup("sel ibias vcdl", VcdlBiasCurrent.iBiasVcdl, 0, 255, 1)
           )
         }
       )

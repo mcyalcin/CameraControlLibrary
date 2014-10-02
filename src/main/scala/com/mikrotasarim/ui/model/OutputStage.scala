@@ -210,7 +210,6 @@ object OutputStage {
     }
   }
 
-  // TODO: Refactor this eyesore
   object pdResWord extends MemoryLocation {
     override val address = 32
 
@@ -295,7 +294,6 @@ object OutputStage {
     }
   }
 
-  // TODO: Refactor this eyesore
   object moreDelayWord extends MemoryLocation {
 
     val coarseDlySel = IntegerProperty(2)
@@ -336,7 +334,6 @@ object OutputStage {
     }
   }
 
-  // TODO: Is this really necessary?
   val memoryLocations = Map(
     29 -> new drivePowerMemoryLocation(29),
     30 -> new drivePowerMemoryLocation(30)

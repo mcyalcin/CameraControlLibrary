@@ -9,7 +9,6 @@ import scalafx.scene.Node
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 
-// TODO: Refactor sliders
 object UsbCam3825AdcChannelControls {
   def createAdcChannelTab: Node =
     new ScrollPane {

@@ -58,6 +58,26 @@ object UsbCam3825UiHelper {
     }).toList
   }
 
+  def createLabeledSnappingSliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double, increment: Double): Node =
+    new HBox {
+      spacing = 10
+      content = List(
+        new Label(label),
+        new Slider {
+          min = mini
+          max = maxi
+          value <==> model
+          snapToTicks = true
+          blockIncrement = increment
+          majorTickUnit = increment
+        },
+        new Label {
+          text <== model.asString
+          prefWidth = 20
+        }
+      )
+    }
+
   def createDelaySliderGroup(label: String, model: IntegerProperty, mini: Double, maxi: Double, commitMethod: () => Unit, resetMethod: () => Unit, changed: BooleanProperty): Node = {
     new HBox {
       spacing = 10
