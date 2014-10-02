@@ -6,7 +6,6 @@ import com.mikrotasarim.camera.device._
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
   def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
-
     new CompositeCommand(
       GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
         GenerateCommitWireInCommands :+
@@ -125,8 +124,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands ++
         (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
-        // Test bla
-        :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(address + " -> " + String.format("%16s", a.toBinaryString).replace(' ', '0')))
+//        :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(address + " -> " + String.format("%16s", a.toBinaryString).replace(' ', '0')))
     )
   }
 
@@ -145,7 +143,6 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToRoicMemoryCommand) ++ GenerateCommitWireInCommands
-
     )
   }
 
@@ -242,6 +239,7 @@ trait UsbCam3825Constants {
   val FlashInFifoPipe = 0x80
 
   // 0xA0 - 0xBF PipeOut
+  val ReadPipe = 0xa0
 
   // Reset bits - these are supposed to set one bit on a 32 bit wire, so powers of two are assigned
   val FpgaReset = 1

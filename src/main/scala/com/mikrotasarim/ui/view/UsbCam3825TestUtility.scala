@@ -125,18 +125,6 @@ object UsbCam3825TestUtility extends JFXApp {
     }
   }
 
-  private def createOutputStageTab: Node = {
-    new ScrollPane {
-      content = new Label("Ton implemented yet.")
-    }
-  }
-
-  private def createMemoryTab: Node = {
-    new ScrollPane {
-      content = new Label("Not implemented yet.")
-    }
-  }
-
   private def createFpgaControlPanel: Node = {
     new ScrollPane {
       content = new VBox {
@@ -163,8 +151,8 @@ object UsbCam3825TestUtility extends JFXApp {
           selected <==> UsbCam3825TestUtilityModel.ResetControls.fpgaReset
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed
         },
-        new CheckBox("ASIC Reset") {
-          selected <==> UsbCam3825TestUtilityModel.ResetControls.roicReset
+        new CheckBox("Chip Reset") {
+          selected <==> UsbCam3825TestUtilityModel.ResetControls.chipReset
           disable <== !UsbCam3825TestUtilityModel.bitfileDeployed ||
             UsbCam3825TestUtilityModel.ResetControls.fpgaReset
         }

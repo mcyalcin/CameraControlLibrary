@@ -9,7 +9,6 @@ import scalafx.beans.property.{IntegerProperty, BooleanProperty, StringProperty}
 import scalafx.beans.value.ObservableValue
 import scalafx.collections.ObservableBuffer
 
-// TODO: Divide up sub-module models
 object UsbCam3825TestUtilityModel {
 
   var commandFactory: UsbCam3825CommandFactory = new UsbCam3825CommandFactory(new ConsoleMockDeviceInterface)
@@ -31,6 +30,8 @@ object UsbCam3825TestUtilityModel {
   val testMode: BooleanProperty = new BooleanProperty() {
     value = false
     onChange(if (testMode.value) {
+      ResetControls.fpgaReset.value = true
+      ResetControls.chipReset.value = true
       bitfileDeployed.value = true
       commandFactory = new UsbCam3825CommandFactory(new ConsoleMockDeviceInterface)
     } else {
@@ -44,7 +45,7 @@ object UsbCam3825TestUtilityModel {
       onChange(commandFactory.MakeFpgaResetCommand(this.value).Execute())
     }
 
-    val roicReset = new BooleanProperty() {
+    val chipReset = new BooleanProperty() {
       value = true
       onChange(commandFactory.MakeRoicResetCommand(this.value).Execute())
     }
@@ -57,7 +58,5 @@ object UsbCam3825TestUtilityModel {
 
   def CommitMemoryLocation(memoryLocation: MemoryLocation) =
     commandFactory.MakeWriteToAsicMemoryTopCommand(memoryLocation.address, memoryLocation.memoryValue).Execute()
-
-
 
 }
