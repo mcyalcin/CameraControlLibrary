@@ -124,7 +124,6 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     new CompositeCommand(
       GenerateWriteWireInCommands(address, value, WriteToAsicMemoryTopCommand) ++ GenerateCommitWireInCommands ++
         (MakeSetWireInValueCommand(AsicCommandWire, UpdateAsicMemoryCommand) +: GenerateCommitWireInCommands)
-//        :+ MakeReadFromAsicMemoryTopCommand(address, (a: Long) => println(address + " -> " + String.format("%16s", a.toBinaryString).replace(' ', '0')))
     )
   }
 
