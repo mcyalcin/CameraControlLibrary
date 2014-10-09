@@ -3,7 +3,7 @@ package com.mikrotasarim.ui.model
 import spire.implicits._
 import scala.collection.immutable.ListMap
 import scalafx.beans.property.{StringProperty, BooleanProperty, IntegerProperty}
-import UsbCam3825TestUtilityModel.{CommitMemoryLocation, MemoryLocation}
+import DeviceInterfaceModel.{CommitMemoryLocation, MemoryLocation}
 
 import scalafx.collections.ObservableBuffer
 
@@ -63,7 +63,7 @@ object DigitalController {
     new DigPadDrive("digtest_tg<2>", 92, 12),
     new DigPadDrive("digtest_tg<1>", 91, 0),
     new DigPadDrive("digtest_tg<0>", 91, 3)
-  )
+  ).reverse
 
   val digTest0Options = ListMap(
     "Logic 0" -> "00000",

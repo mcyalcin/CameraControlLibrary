@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.model
 
-import UsbCam3825TestUtilityModel.{MemoryLocation, CommitMemoryLocation}
+import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 import scala.collection.immutable.ListMap
 import scalafx.beans.property.{StringProperty, BooleanProperty}

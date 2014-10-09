@@ -5,9 +5,10 @@ import com.mikrotasarim.ui.model.OutputStage.BiasCurrent
 
 import scalafx.Includes._
 import scalafx.beans.property.{BooleanProperty, IntegerProperty}
+import scalafx.collections.ObservableBuffer
 import scalafx.scene.Node
 import scalafx.scene.control._
-import scalafx.scene.layout.HBox
+import scalafx.scene.layout.{VBox, HBox}
 import scalafx.scene.paint.Color
 import scalafx.util.converter.DoubleStringConverter
 
@@ -155,5 +156,19 @@ object UsbCam3825UiHelper {
         }
       )
     }
+  }
+
+  def createLabeledBooleanDropdown(label: String, optionLabels: ObservableBuffer[String], binding: BooleanProperty) = new VBox {
+    prefWidth = 80
+    spacing = 5
+    content = List(
+      new Label(label),
+      new ChoiceBox(optionLabels) {
+        selectionModel().selectLast()
+        selectionModel().selectedItem.onChange(
+          (_, _, newValue) => binding.value = newValue == optionLabels(0)
+        )
+      }
+    )
   }
 }

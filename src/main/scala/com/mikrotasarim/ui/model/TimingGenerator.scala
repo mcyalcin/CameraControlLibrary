@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.model
 
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.{MemoryLocation, CommitMemoryLocation}
+import com.mikrotasarim.ui.model.DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 import spire.implicits._
 import scala.collection.immutable.ListMap

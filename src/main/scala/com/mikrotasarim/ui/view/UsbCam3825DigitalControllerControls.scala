@@ -1,7 +1,8 @@
 package com.mikrotasarim.ui.view
 
+import UsbCam3825UiHelper._
+
 import scalafx.Includes._
-import scalafx.beans.property.BooleanProperty
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.Node
@@ -41,20 +42,6 @@ object UsbCam3825DigitalControllerControls {
       createLabeledBooleanDropdown("Flash Clock", clockSpeedLabels, slowFlashClock),
       createLabeledBooleanDropdown("Pixel Clock", internalRoicLabels, internalPixelClock),
       createLabeledBooleanDropdown("Dval/Fval ", internalRoicLabels, internalDvalFval)
-    )
-  }
-
-  private def createLabeledBooleanDropdown(label: String, optionLabels: ObservableBuffer[String], binding: BooleanProperty) = new VBox {
-    prefWidth = 80
-    spacing = 5
-    content = List(
-      new Label(label),
-      new ChoiceBox(optionLabels) {
-        selectionModel().selectLast()
-        selectionModel().selectedItem.onChange(
-          (_, _, newValue) => binding.value = newValue == optionLabels(0)
-        )
-      }
     )
   }
 

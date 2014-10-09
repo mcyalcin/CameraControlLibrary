@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.model
 
-import com.mikrotasarim.ui.model.UsbCam3825TestUtilityModel.MemoryLocation
+import com.mikrotasarim.ui.model.DeviceInterfaceModel.MemoryLocation
 import spire.implicits._
 import scalafx.beans.property.{BooleanProperty, DoubleProperty, StringProperty}
 

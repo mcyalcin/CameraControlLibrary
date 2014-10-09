@@ -5,6 +5,11 @@ import com.mikrotasarim.camera.device._
 
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
+  def MakeFpgaDvalFvalSelectionCommand(embeddedDvalFval: Boolean): Command = new CompositeCommand(List(
+    MakeFpgaConfigurationCommand(if (embeddedDvalFval) EmbeddedDvalFval else 0, EmbeddedDvalFval),
+    MakeUpdateWireInsCommand()
+  ))
+
   def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
     new CompositeCommand(
       GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
@@ -65,6 +70,10 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
   def MakeResetCommand(bit: Long, mask: Long): Command = {
     new SimpleCommand(() => device.SetWireInValue(ResetWire, bit, mask))
+  }
+
+  def MakeFpgaConfigurationCommand(bit: Long, mask: Long): Command = {
+    new SimpleCommand(() => device.SetWireInValue(FpgaConfigWire, bit, mask))
   }
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
@@ -220,6 +229,8 @@ trait UsbCam3825Constants {
   // Endpoint addresses
   // 0x00 - 0x1F WireIn
   val ResetWire = 0x00
+  val FpgaConfigWire = 0x05
+
   val AsicCommandWire = 0x01
   val FlashCommandWire = 0x04
   val AddressWire = 0x02
@@ -239,11 +250,18 @@ trait UsbCam3825Constants {
 
   // 0xA0 - 0xBF PipeOut
   val ReadPipe = 0xa0
+  val VideoPipe0 = 0xa1
+  val VideoPipe1 = 0xa2
+  val VideoPipe2 = 0xa3
+  val VideoPipe3 = 0xa4
 
-  // Reset bits - these are supposed to set one bit on a 32 bit wire, so powers of two are assigned
+  // Reset bits. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
   val FpgaReset = 1
   val ChipReset = 2
   val FlashInFifoReset = 4
+
+  // Fpga configuration switch bits on fpga configuration wire. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
+  val EmbeddedDvalFval = 1
 
   // Commands to be used on AsicCommandWire
   val WriteToAsicMemoryTopCommand = 0xc0
@@ -274,4 +292,7 @@ trait UsbCam3825Constants {
 
   val FlashBlockSize = 256
   val FlashMemoryMaxAddress = 0x1000000 - 1
+
+  // Fpga configuration parameters
+//  val fvalDval
 }

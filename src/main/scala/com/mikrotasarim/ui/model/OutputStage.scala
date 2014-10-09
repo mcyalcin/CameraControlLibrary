@@ -4,7 +4,7 @@ import spire.implicits._
 import scala.collection.immutable.ListMap
 import scalafx.beans.property.{DoubleProperty, StringProperty, IntegerProperty, BooleanProperty}
 import scalafx.collections.ObservableBuffer
-import UsbCam3825TestUtilityModel.{MemoryLocation, CommitMemoryLocation}
+import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 object OutputStage {
 
