@@ -261,7 +261,12 @@ trait UsbCam3825Constants {
   val FlashInFifoReset = 4
 
   // Fpga configuration switch bits on fpga configuration wire. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
-  val EmbeddedDvalFval = 1
+  val EmbeddedDvalFval = 16
+  val EnableChannel0 = 1
+  val EnableChannel1 = 2
+  val EnableChannel2 = 4
+  val EnableChannel3 = 8
+  val EnableTestFeedOnChannels = 32
 
   // Commands to be used on AsicCommandWire
   val WriteToAsicMemoryTopCommand = 0xc0
@@ -292,7 +297,4 @@ trait UsbCam3825Constants {
 
   val FlashBlockSize = 256
   val FlashMemoryMaxAddress = 0x1000000 - 1
-
-  // Fpga configuration parameters
-//  val fvalDval
 }
