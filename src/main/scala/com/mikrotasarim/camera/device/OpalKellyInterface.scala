@@ -27,6 +27,10 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
 
   override def WriteToPipeIn(address: Int, size: Int, data: Array[Byte]): Unit = panel.WriteToPipeIn(address, size, data)
 
+  override def ReadFromPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = {
+    panel.ReadFromPipeOut(address, size, data)
+  }
+
   override def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte]): Unit =
     panel.WriteToBlockPipeIn(address, blockSize, size, data)
 

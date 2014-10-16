@@ -5,6 +5,66 @@ import com.mikrotasarim.camera.device._
 
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
+  def MakeReadOutputChunkCommand(): Command = {
+    val buf0 = Array.ofDim[Byte](4096)
+    val buf1 = Array.ofDim[Byte](4096)
+    val buf2 = Array.ofDim[Byte](4096)
+    val buf3 = Array.ofDim[Byte](4096)
+    device.ReadFromPipeOut(DigitalOutputPipe0, buf0.length, buf0)
+    println(System.currentTimeMillis())
+    device.ReadFromPipeOut(DigitalOutputPipe1, buf1.length, buf1)
+    println(System.currentTimeMillis())
+    device.ReadFromPipeOut(DigitalOutputPipe2, buf2.length, buf2)
+    println(System.currentTimeMillis())
+    device.ReadFromPipeOut(DigitalOutputPipe3, buf3.length, buf3)
+    println(System.currentTimeMillis())
+    println("TROLOLO0")
+    for (i <- 0 until buf0.length by 4) {
+      print((buf0(i+3) + 256) % 256)
+      print(" ")
+      print((buf0(i+2) + 256) % 256)
+      print(" ")
+      print((buf0(i+1) + 256) % 256)
+      print(" ")
+      print((buf0(i) + 256) % 256)
+      println()
+    }
+    println("TROLOLO1")
+    for (i <- 0 until buf1.length by 4) {
+      print((buf1(i+3) + 256) % 256)
+      print(" ")
+      print((buf1(i+2) + 256) % 256)
+      print(" ")
+      print((buf1(i+1) + 256) % 256)
+      print(" ")
+      print((buf1(i) + 256) % 256)
+      println()
+    }
+    println("TROLOLO2")
+    for (i <- 0 until buf2.length by 4) {
+      print((buf2(i+3) + 256) % 256)
+      print(" ")
+      print((buf2(i+2) + 256) % 256)
+      print(" ")
+      print((buf2(i+1) + 256) % 256)
+      print(" ")
+      print((buf2(i) + 256) % 256)
+      println()
+    }
+    println("TROLOLO3")
+    for (i <- 0 until buf3.length by 4) {
+      print((buf3(i+3) + 256) % 256)
+      print(" ")
+      print((buf3(i+2) + 256) % 256)
+      print(" ")
+      print((buf3(i+1) + 256) % 256)
+      print(" ")
+      print((buf3(i) + 256) % 256)
+      println()
+    }
+    new SimpleCommand(() => println("Ok"))
+  }
+
   def MakeFpgaDvalFvalSelectionCommand(embeddedDvalFval: Boolean): Command = new CompositeCommand(List(
     MakeFpgaConfigurationCommand(if (embeddedDvalFval) EmbeddedDvalFval else 0, EmbeddedDvalFval),
     MakeUpdateWireInsCommand()
@@ -56,7 +116,24 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     )
   }
 
-  def MakeReadFromFlashMemoryCommand() = ???
+  def MakeReadFromFlashMemoryCommand(startAddress: Int, data: Array[Byte]): Command = {
+    if (startAddress < 0) throw new Exception("Illegal start address")
+    if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
+
+    val numberOfFullBlocks = data.length / FlashBlockSize
+
+    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
+
+    // TODO: Read flash memory
+//    val blockWriteCommandList = (
+//      for (i <- 0 to numberOfFullBlocks) yield
+//        MakeWriteFlashBlockCommand(
+//          startAddress + i * FlashBlockSize,
+//          data.slice(i * FlashBlockSize, (i + 1) * FlashBlockSize)
+//        )
+//      ).toList
+//    new CompositeCommand(blockWriteCommandList)
+  }
 
   def MakeReadFromRoicNucMemoryCommand() = ???
 
@@ -260,10 +337,10 @@ trait UsbCam3825Constants {
 
   // 0xA0 - 0xBF PipeOut
   val ReadPipe = 0xa0
-  val VideoPipe0 = 0xa1
-  val VideoPipe1 = 0xa2
-  val VideoPipe2 = 0xa3
-  val VideoPipe3 = 0xa4
+  val DigitalOutputPipe0 = 0xa1
+  val DigitalOutputPipe1 = 0xa2
+  val DigitalOutputPipe2 = 0xa3
+  val DigitalOutputPipe3 = 0xa4
 
   // Reset bits. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
   val FpgaReset = 1

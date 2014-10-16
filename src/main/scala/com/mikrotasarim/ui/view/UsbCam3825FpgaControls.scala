@@ -43,6 +43,11 @@ object UsbCam3825FpgaControls {
         (for (i <- 0 to 3) yield createChannelCheckBox(i)).toList :+
         new CheckBox("Test Feed on Channels") {
           selected <==> ChannelControls.testFeedEnabled
+        } :+
+        new Button("Read") {
+          onAction = handle {
+            ReadDigitalOutputChunk()
+          }
         }
     }
   }

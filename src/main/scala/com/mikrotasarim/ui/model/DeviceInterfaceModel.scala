@@ -60,6 +60,10 @@ object DeviceInterfaceModel {
     testFeedEnabled.onChange(commandFactory.MakeEnableTestFeedCommand(testFeedEnabled.value).Execute())
   }
 
+  def ReadDigitalOutputChunk(): Unit = {
+    commandFactory.MakeReadOutputChunkCommand().Execute()
+  }
+
   object ResetControls {
     val fpgaReset = new BooleanProperty() {
       value = true

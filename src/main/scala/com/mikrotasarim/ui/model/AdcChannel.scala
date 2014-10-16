@@ -224,7 +224,10 @@ object AdcChannel {
 
   val AdcChannelBotSettings = new AdcChannelSettings(82)
 
-  val AdcTestPresetLabels = ObservableBuffer("Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6")
+  val AdcTestPresetLabels = ObservableBuffer(
+    "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6",
+    "Probe 5", "Probe 6", "Probe 7", "Probe 8"
+  )
 
   val AdcTestPresetVersionLabels = ObservableBuffer("V1", "V2")
 
@@ -240,6 +243,19 @@ object AdcChannel {
       settings.clockSettings.enAdcClk(1).value = false
       settings.clockSettings.enPgaClk(0).value = true
       settings.clockSettings.enPgaClk(1).value = false
+      settings.clockSettings.enClkMode(0).value = false
+      settings.clockSettings.enClkMode(1).value = false
+    }
+
+    def setClockPresetsP5(settings: AdcChannelSettings): Unit = {
+      settings.clockSettings.selPgaClk(0).value = false
+      settings.clockSettings.selPgaClk(1).value = false
+      settings.clockSettings.selAdcClk(0).value = false
+      settings.clockSettings.selAdcClk(1).value = false
+      settings.clockSettings.enAdcClk(0).value = true
+      settings.clockSettings.enAdcClk(1).value = true
+      settings.clockSettings.enPgaClk(0).value = true
+      settings.clockSettings.enPgaClk(1).value = true
       settings.clockSettings.enClkMode(0).value = false
       settings.clockSettings.enClkMode(1).value = false
     }
@@ -286,21 +302,43 @@ object AdcChannel {
     def setModePresetsS5V1(settings: AdcChannelSettings): Unit = {
       settings.modePositive.selectedMode(0).value = "DAC reference input - PGA - ADC"
       settings.modePositive.selectedMode(1).value = "On-chip Drive - PGA - ADC"
+      settings.modeNegative.selectedMode(0).value = "DAC reference input - PGA - ADC"
+      settings.modeNegative.selectedMode(1).value = "On-chip Drive - PGA - ADC"
+    }
+
+    def setModePresetsP5(settings: AdcChannelSettings): Unit = {
+      settings.modePositive.selectedMode(0).value = "DAC reference input - PGA - ADC"
+      settings.modePositive.selectedMode(1).value = "DAC reference input - PGA - ADC"
+      settings.modeNegative.selectedMode(0).value = "DAC reference input - PGA - ADC"
+      settings.modeNegative.selectedMode(1).value = "DAC reference input - PGA - ADC"
     }
 
     def setModePresetsS5V2(settings: AdcChannelSettings): Unit = {
       settings.modePositive.selectedMode(0).value = "On-chip Drive - PGA - ADC"
       settings.modePositive.selectedMode(1).value = "DAC reference input - PGA - ADC"
+      settings.modeNegative.selectedMode(0).value = "On-chip Drive - PGA - ADC"
+      settings.modeNegative.selectedMode(1).value = "DAC reference input - PGA - ADC"
     }
 
     def setModePresetsS6V1(settings: AdcChannelSettings): Unit = {
       settings.modePositive.selectedMode(0).value = "DAC reference input - ADC"
       settings.modePositive.selectedMode(1).value = "On-chip Drive - PGA - ADC"
+      settings.modeNegative.selectedMode(0).value = "DAC reference input - ADC"
+      settings.modeNegative.selectedMode(1).value = "On-chip Drive - PGA - ADC"
     }
 
     def setModePresetsS6V2(settings: AdcChannelSettings): Unit = {
       settings.modePositive.selectedMode(0).value = "On-chip Drive - PGA - ADC"
       settings.modePositive.selectedMode(1).value = "DAC reference input - ADC"
+      settings.modeNegative.selectedMode(0).value = "On-chip Drive - PGA - ADC"
+      settings.modeNegative.selectedMode(1).value = "DAC reference input - ADC"
+    }
+
+    def setPgaPresetsP5(settings: AdcChannelSettings): Unit = {
+      settings.pgaSettings.bwPga.value = 0
+      settings.pgaSettings.selectedGain.value = "1.500"
+      settings.pgaSettings.pdPga(0).value = true
+      settings.pgaSettings.pdPga(1).value = true
     }
 
     def setPgaPresetsS5V1(settings: AdcChannelSettings): Unit = {
@@ -352,6 +390,20 @@ object AdcChannel {
       settings.miscControls.externalRefDacDrv.value = false
     }
 
+    def setMiscPresetsP5(settings: AdcChannelSettings): Unit = {
+      settings.miscControls.enableMdacTest.value = false
+      settings.miscControls.extRefEnable.value = false
+      settings.miscControls.pdAdcRefDrv(0).value = false
+      settings.miscControls.pdAdcRefDrv(1).value = false
+      settings.miscControls.pdPgaRefDrv(0).value = false
+      settings.miscControls.pdPgaRefDrv(1).value = false
+      settings.miscControls.pdAdc(0).value = false
+      settings.miscControls.pdAdc(1).value = false
+      settings.miscControls.rstbDigCor(0).value = true
+      settings.miscControls.rstbDigCor(1).value = true
+      settings.miscControls.externalRefDacDrv.value = false
+    }
+
     def setMiscPresetsS6V2(settings: AdcChannelSettings): Unit = {
       settings.miscControls.enableMdacTest.value = false
       settings.miscControls.extRefEnable.value = false
@@ -395,7 +447,15 @@ object AdcChannel {
       settings.inputDriveControls.shortRefEnable.value = false
     }
 
-    if (stage == "Stage 5") {
+    if (stage == "Stage 1") {
+
+    } else if (stage == "Stage 2") {
+      // TODO
+    } else if (stage == "Stage 3") {
+      // TODO
+    } else if (stage == "Stage 4") {
+      // TODO
+    } else if (stage == "Stage 5") {
       if (version == "V1") {
         setClockPresetsS5V1(AdcChannelTopSettings)
         setClockPresetsS5V1(AdcChannelBotSettings)
@@ -451,6 +511,25 @@ object AdcChannel {
         setMiscPresetsS6V2(AdcChannelTopSettings)
         setMiscPresetsS6V2(AdcChannelBotSettings)
       }
+    } else if (stage == "Probe 5") {
+      // TODO
+    } else if (stage == "Probe 6") {
+      setClockPresetsP5(AdcChannelTopSettings)
+      setClockPresetsP5(AdcChannelBotSettings)
+      setTimingDefaults(AdcChannelTopSettings)
+      setTimingDefaults(AdcChannelBotSettings)
+      setInputDriveDefaults(AdcChannelTopSettings)
+      setInputDriveDefaults(AdcChannelBotSettings)
+      setModePresetsP5(AdcChannelTopSettings)
+      setModePresetsP5(AdcChannelBotSettings)
+      setPgaPresetsP5(AdcChannelTopSettings)
+      setPgaPresetsP5(AdcChannelBotSettings)
+      setMiscPresetsP5(AdcChannelTopSettings)
+      setMiscPresetsP5(AdcChannelBotSettings)
+    } else if (stage == "Probe 7") {
+      // TODO
+    } else if (stage == "Probe 8") {
+      // TODO
     }
   }
 }
