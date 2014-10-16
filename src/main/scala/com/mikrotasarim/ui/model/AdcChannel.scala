@@ -30,11 +30,11 @@ object AdcChannel {
         new BooleanProperty(this, "enPgaClk1", false))
     enPgaClk(0).onChange(CommitMemoryLocation(this))
     enPgaClk(1).onChange(CommitMemoryLocation(this))
-    val selClkMode =
+    val enClkMode =
       List(new BooleanProperty(this, "selClkMode0", false),
         new BooleanProperty(this, "selClkMode1", false))
-    selClkMode(0).onChange(CommitMemoryLocation(this))
-    selClkMode(1).onChange(CommitMemoryLocation(this))
+    enClkMode(0).onChange(CommitMemoryLocation(this))
+    enClkMode(1).onChange(CommitMemoryLocation(this))
 
     override def memoryValue: Long =
       (if (selAdcClk(1).value) 2 pow 9 else 0) +
@@ -45,8 +45,8 @@ object AdcChannel {
         (if (enAdcClk(0).value) 2 pow 4 else 0) +
         (if (enPgaClk(1).value) 2 pow 3 else 0) +
         (if (enPgaClk(0).value) 2 pow 2 else 0) +
-        (if (selClkMode(1).value) 2 pow 1 else 0) +
-        (if (selClkMode(0).value) 1 else 0)
+        (if (enClkMode(1).value) 2 pow 1 else 0) +
+        (if (enClkMode(0).value) 1 else 0)
   }
 
   class AdcChannelTimingSliders(override val address: Int) extends MemoryLocation {
@@ -224,4 +224,233 @@ object AdcChannel {
 
   val AdcChannelBotSettings = new AdcChannelSettings(82)
 
+  val AdcTestPresetLabels = ObservableBuffer("Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6")
+
+  val AdcTestPresetVersionLabels = ObservableBuffer("V1", "V2")
+
+  def ApplyPresets(stage: String, version: String): Unit = {
+
+    // TODO: Put all this into a lookup table, rather than methods.
+    def setClockPresetsS5V1(settings: AdcChannelSettings): Unit = {
+      settings.clockSettings.selPgaClk(0).value = false
+      settings.clockSettings.selPgaClk(1).value = false
+      settings.clockSettings.selAdcClk(0).value = false
+      settings.clockSettings.selAdcClk(1).value = false
+      settings.clockSettings.enAdcClk(0).value = true
+      settings.clockSettings.enAdcClk(1).value = false
+      settings.clockSettings.enPgaClk(0).value = true
+      settings.clockSettings.enPgaClk(1).value = false
+      settings.clockSettings.enClkMode(0).value = false
+      settings.clockSettings.enClkMode(1).value = false
+    }
+
+    def setClockPresetsS6V1(settings: AdcChannelSettings): Unit = {
+      settings.clockSettings.selPgaClk(0).value = false
+      settings.clockSettings.selPgaClk(1).value = false
+      settings.clockSettings.selAdcClk(0).value = false
+      settings.clockSettings.selAdcClk(1).value = false
+      settings.clockSettings.enAdcClk(0).value = true
+      settings.clockSettings.enAdcClk(1).value = false
+      settings.clockSettings.enPgaClk(0).value = false
+      settings.clockSettings.enPgaClk(1).value = false
+      settings.clockSettings.enClkMode(0).value = false
+      settings.clockSettings.enClkMode(1).value = false
+    }
+
+    def setClockPresetsS5V2(settings: AdcChannelSettings): Unit = {
+      settings.clockSettings.selPgaClk(0).value = false
+      settings.clockSettings.selPgaClk(1).value = false
+      settings.clockSettings.selAdcClk(0).value = false
+      settings.clockSettings.selAdcClk(1).value = false
+      settings.clockSettings.enAdcClk(0).value = false
+      settings.clockSettings.enAdcClk(1).value = true
+      settings.clockSettings.enPgaClk(0).value = false
+      settings.clockSettings.enPgaClk(1).value = true
+      settings.clockSettings.enClkMode(0).value = false
+      settings.clockSettings.enClkMode(1).value = false
+    }
+
+    def setClockPresetsS6V2(settings: AdcChannelSettings): Unit = {
+      settings.clockSettings.selPgaClk(0).value = false
+      settings.clockSettings.selPgaClk(1).value = false
+      settings.clockSettings.selAdcClk(0).value = false
+      settings.clockSettings.selAdcClk(1).value = false
+      settings.clockSettings.enAdcClk(0).value = false
+      settings.clockSettings.enAdcClk(1).value = true
+      settings.clockSettings.enPgaClk(0).value = false
+      settings.clockSettings.enPgaClk(1).value = false
+      settings.clockSettings.enClkMode(0).value = false
+      settings.clockSettings.enClkMode(1).value = false
+    }
+
+    def setModePresetsS5V1(settings: AdcChannelSettings): Unit = {
+      settings.modePositive.selectedMode(0).value = "DAC reference input - PGA - ADC"
+      settings.modePositive.selectedMode(1).value = "On-chip Drive - PGA - ADC"
+    }
+
+    def setModePresetsS5V2(settings: AdcChannelSettings): Unit = {
+      settings.modePositive.selectedMode(0).value = "On-chip Drive - PGA - ADC"
+      settings.modePositive.selectedMode(1).value = "DAC reference input - PGA - ADC"
+    }
+
+    def setModePresetsS6V1(settings: AdcChannelSettings): Unit = {
+      settings.modePositive.selectedMode(0).value = "DAC reference input - ADC"
+      settings.modePositive.selectedMode(1).value = "On-chip Drive - PGA - ADC"
+    }
+
+    def setModePresetsS6V2(settings: AdcChannelSettings): Unit = {
+      settings.modePositive.selectedMode(0).value = "On-chip Drive - PGA - ADC"
+      settings.modePositive.selectedMode(1).value = "DAC reference input - ADC"
+    }
+
+    def setPgaPresetsS5V1(settings: AdcChannelSettings): Unit = {
+      settings.pgaSettings.bwPga.value = 0
+      settings.pgaSettings.selectedGain.value = "1.500"
+      settings.pgaSettings.pdPga(0).value = false
+      settings.pgaSettings.pdPga(1).value = true
+    }
+
+    def setPgaPresetsS5V2(settings: AdcChannelSettings): Unit = {
+      settings.pgaSettings.bwPga.value = 0
+      settings.pgaSettings.selectedGain.value = "1.500"
+      settings.pgaSettings.pdPga(0).value = true
+      settings.pgaSettings.pdPga(1).value = false
+    }
+
+    def setPgaDefaults(settings: AdcChannelSettings): Unit = {
+      settings.pgaSettings.bwPga.value = 0
+      settings.pgaSettings.selectedGain.value = "1.500"
+      settings.pgaSettings.pdPga(0).value = true
+      settings.pgaSettings.pdPga(1).value = true
+    }
+
+    def setMiscPresetsS5V2(settings: AdcChannelSettings): Unit = {
+      settings.miscControls.enableMdacTest.value = false
+      settings.miscControls.extRefEnable.value = false
+      settings.miscControls.pdAdcRefDrv(0).value = true
+      settings.miscControls.pdAdcRefDrv(1).value = false
+      settings.miscControls.pdPgaRefDrv(0).value = true
+      settings.miscControls.pdPgaRefDrv(1).value = false
+      settings.miscControls.pdAdc(0).value = true
+      settings.miscControls.pdAdc(1).value = false
+      settings.miscControls.rstbDigCor(0).value = false
+      settings.miscControls.rstbDigCor(1).value = true
+      settings.miscControls.externalRefDacDrv.value = false
+    }
+
+    def setMiscPresetsS5V1(settings: AdcChannelSettings): Unit = {
+      settings.miscControls.enableMdacTest.value = false
+      settings.miscControls.extRefEnable.value = false
+      settings.miscControls.pdAdcRefDrv(0).value = false
+      settings.miscControls.pdAdcRefDrv(1).value = true
+      settings.miscControls.pdPgaRefDrv(0).value = false
+      settings.miscControls.pdPgaRefDrv(1).value = true
+      settings.miscControls.pdAdc(0).value = false
+      settings.miscControls.pdAdc(1).value = true
+      settings.miscControls.rstbDigCor(0).value = true
+      settings.miscControls.rstbDigCor(1).value = false
+      settings.miscControls.externalRefDacDrv.value = false
+    }
+
+    def setMiscPresetsS6V2(settings: AdcChannelSettings): Unit = {
+      settings.miscControls.enableMdacTest.value = false
+      settings.miscControls.extRefEnable.value = false
+      settings.miscControls.pdAdcRefDrv(0).value = true
+      settings.miscControls.pdAdcRefDrv(1).value = false
+      settings.miscControls.pdPgaRefDrv(0).value = true
+      settings.miscControls.pdPgaRefDrv(1).value = true
+      settings.miscControls.pdAdc(0).value = true
+      settings.miscControls.pdAdc(1).value = false
+      settings.miscControls.rstbDigCor(0).value = false
+      settings.miscControls.rstbDigCor(1).value = true
+      settings.miscControls.externalRefDacDrv.value = false
+    }
+
+    def setMiscPresetsS6V1(settings: AdcChannelSettings): Unit = {
+      settings.miscControls.enableMdacTest.value = false
+      settings.miscControls.extRefEnable.value = false
+      settings.miscControls.pdAdcRefDrv(0).value = false
+      settings.miscControls.pdAdcRefDrv(1).value = true
+      settings.miscControls.pdPgaRefDrv(0).value = true
+      settings.miscControls.pdPgaRefDrv(1).value = true
+      settings.miscControls.pdAdc(0).value = false
+      settings.miscControls.pdAdc(1).value = true
+      settings.miscControls.rstbDigCor(0).value = true
+      settings.miscControls.rstbDigCor(1).value = false
+      settings.miscControls.externalRefDacDrv.value = false
+    }
+
+    def setTimingDefaults(settings: AdcChannelSettings): Unit = {
+      settings.timingSliders.delay.value = 3
+      settings.timingSliders.nod.value = 3
+      settings.timingSliders.saMargin.value = 2
+    }
+
+    def setInputDriveDefaults(settings: AdcChannelSettings): Unit = {
+      settings.inputDriveControls.bwPredrv.value = 0
+      settings.inputDriveControls.pdp(0).value = true
+      settings.inputDriveControls.pdp(1).value = true
+      settings.inputDriveControls.pdn(0).value = true
+      settings.inputDriveControls.pdn(1).value = true
+      settings.inputDriveControls.shortRefEnable.value = false
+    }
+
+    if (stage == "Stage 5") {
+      if (version == "V1") {
+        setClockPresetsS5V1(AdcChannelTopSettings)
+        setClockPresetsS5V1(AdcChannelBotSettings)
+        setTimingDefaults(AdcChannelTopSettings)
+        setTimingDefaults(AdcChannelBotSettings)
+        setInputDriveDefaults(AdcChannelTopSettings)
+        setInputDriveDefaults(AdcChannelBotSettings)
+        setModePresetsS5V1(AdcChannelTopSettings)
+        setModePresetsS5V1(AdcChannelBotSettings)
+        setPgaPresetsS5V1(AdcChannelTopSettings)
+        setPgaPresetsS5V1(AdcChannelBotSettings)
+        setMiscPresetsS5V1(AdcChannelTopSettings)
+        setMiscPresetsS5V1(AdcChannelBotSettings)
+      } else if (version == "V2") {
+        setClockPresetsS5V2(AdcChannelTopSettings)
+        setClockPresetsS5V2(AdcChannelBotSettings)
+        setTimingDefaults(AdcChannelTopSettings)
+        setTimingDefaults(AdcChannelBotSettings)
+        setInputDriveDefaults(AdcChannelTopSettings)
+        setInputDriveDefaults(AdcChannelBotSettings)
+        setModePresetsS5V2(AdcChannelTopSettings)
+        setModePresetsS5V2(AdcChannelBotSettings)
+        setPgaPresetsS5V2(AdcChannelTopSettings)
+        setPgaPresetsS5V2(AdcChannelBotSettings)
+        setMiscPresetsS5V2(AdcChannelTopSettings)
+        setMiscPresetsS5V2(AdcChannelBotSettings)
+      }
+    } else if (stage == "Stage 6") {
+      if (version == "V1") {
+        setTimingDefaults(AdcChannelTopSettings)
+        setTimingDefaults(AdcChannelBotSettings)
+        setInputDriveDefaults(AdcChannelTopSettings)
+        setInputDriveDefaults(AdcChannelBotSettings)
+        setClockPresetsS6V1(AdcChannelTopSettings)
+        setClockPresetsS6V1(AdcChannelBotSettings)
+        setModePresetsS6V1(AdcChannelTopSettings)
+        setModePresetsS6V1(AdcChannelBotSettings)
+        setPgaDefaults(AdcChannelTopSettings)
+        setPgaDefaults(AdcChannelBotSettings)
+        setMiscPresetsS6V1(AdcChannelTopSettings)
+        setMiscPresetsS6V1(AdcChannelBotSettings)
+      } else if (version == "V2") {
+        setTimingDefaults(AdcChannelTopSettings)
+        setTimingDefaults(AdcChannelBotSettings)
+        setInputDriveDefaults(AdcChannelTopSettings)
+        setInputDriveDefaults(AdcChannelBotSettings)
+        setClockPresetsS6V2(AdcChannelTopSettings)
+        setClockPresetsS6V2(AdcChannelBotSettings)
+        setModePresetsS6V2(AdcChannelTopSettings)
+        setModePresetsS6V2(AdcChannelBotSettings)
+        setPgaDefaults(AdcChannelTopSettings)
+        setPgaDefaults(AdcChannelBotSettings)
+        setMiscPresetsS6V2(AdcChannelTopSettings)
+        setMiscPresetsS6V2(AdcChannelBotSettings)
+      }
+    }
+  }
 }
