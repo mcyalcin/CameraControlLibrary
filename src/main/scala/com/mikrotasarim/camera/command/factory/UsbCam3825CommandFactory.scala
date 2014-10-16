@@ -10,6 +10,16 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     MakeUpdateWireInsCommand()
   ))
 
+  def MakeChannelEnableCommand(index: Integer, enable: Boolean): Command = new CompositeCommand(List(
+    MakeFpgaConfigurationCommand(if (enable) EnableChannel(index) else 0, EnableChannel(index)),
+    MakeUpdateWireInsCommand()
+  ))
+
+  def MakeEnableTestFeedCommand(enable: Boolean): Command = new CompositeCommand(List(
+    MakeFpgaConfigurationCommand(if (enable) EnableTestFeedOnChannels else 0, EnableTestFeedOnChannels),
+    MakeUpdateWireInsCommand()
+  ))
+
   def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
     new CompositeCommand(
       GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
@@ -262,10 +272,7 @@ trait UsbCam3825Constants {
 
   // Fpga configuration switch bits on fpga configuration wire. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
   val EmbeddedDvalFval = 16
-  val EnableChannel0 = 1
-  val EnableChannel1 = 2
-  val EnableChannel2 = 4
-  val EnableChannel3 = 8
+  val EnableChannel = Array(1,2,4,8)
   val EnableTestFeedOnChannels = 32
 
   // Commands to be used on AsicCommandWire
