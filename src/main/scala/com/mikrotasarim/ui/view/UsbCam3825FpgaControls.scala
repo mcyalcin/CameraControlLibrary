@@ -27,8 +27,19 @@ object UsbCam3825FpgaControls {
           },
           createSelectBitfileHBox,
           createResetControls,
-          createFvalDvalSelector
+          createFvalDvalSelector,
+          createCameraFeedButton
         )
+      }
+    }
+  }
+
+  private def createCameraFeedButton: Node = {
+    new Button("Camera Feed") {
+      tooltip = "Not implemented yet."
+      disable = true
+      onAction = handle {
+        VideoFeedStage.show()
       }
     }
   }

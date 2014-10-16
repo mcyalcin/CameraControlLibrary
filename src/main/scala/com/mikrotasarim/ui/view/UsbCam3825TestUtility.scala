@@ -47,8 +47,7 @@ object UsbCam3825TestUtility extends JFXApp {
                 new Button("Memory Map") {
                   onAction = () => {
                     MtAs1410x2MemoryMap.ReadAsicMemory()
-                    val dialog = MtAs1410x2MemoryMapStage
-                    dialog.show()
+                    MtAs1410x2MemoryMapStage.show()
                   }
                 }
               )
