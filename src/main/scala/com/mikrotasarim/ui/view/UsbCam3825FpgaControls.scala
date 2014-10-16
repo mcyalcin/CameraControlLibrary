@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.DeviceInterfaceModel
+import com.mikrotasarim.ui.model.DeviceInterfaceModel._
 import com.mikrotasarim.ui.view.UsbCam3825TestUtility._
 import com.mikrotasarim.ui.view.UsbCam3825UiHelper._
 import com.mikrotasarim.utility.DialogMessageStage
@@ -22,15 +22,34 @@ object UsbCam3825FpgaControls {
         content = List(
           new CheckBox("Software Self Test Mode") {
             inner =>
-            inner.selected <==> DeviceInterfaceModel.testMode
+            inner.selected <==> testMode
             tooltip = "On test mode, software works with a mock device interface instead of an actual device"
           },
           createSelectBitfileHBox,
           createResetControls,
           createFvalDvalSelector,
+          createChannelControls,
           createCameraFeedButton
         )
       }
+    }
+  }
+
+  private def createChannelControls: Node = {
+    new HBox {
+      spacing = 10
+      disable <== !bitfileDeployed
+      content =
+        (for (i <- 0 to 3) yield createChannelCheckBox(i)).toList :+
+        new CheckBox("Test Feed on Channels") {
+          selected <==> ChannelControls.testFeedEnabled
+        }
+    }
+  }
+
+  private def createChannelCheckBox(index: Int): Node = {
+    new CheckBox("Channel " + index) {
+      selected <==> ChannelControls.channelEnabled(index)
     }
   }
 
@@ -46,9 +65,9 @@ object UsbCam3825FpgaControls {
 
   private def createFvalDvalSelector: Node = {
     new HBox {
-      disable <== !DeviceInterfaceModel.bitfileDeployed
+      disable <== !bitfileDeployed
       spacing = 10
-      content = createLabeledBooleanDropdown("Dval/Fval", DeviceInterfaceModel.embeddedAsicLabels, DeviceInterfaceModel.embeddedDvalFval)
+      content = createLabeledBooleanDropdown("Dval/Fval", embeddedAsicLabels, embeddedDvalFval)
     }
   }
 
@@ -57,13 +76,13 @@ object UsbCam3825FpgaControls {
       spacing = 20
       content = List(
         new CheckBox("FPGA Reset") {
-          selected <==> DeviceInterfaceModel.ResetControls.fpgaReset
-          disable <== !DeviceInterfaceModel.bitfileDeployed
+          selected <==> ResetControls.fpgaReset
+          disable <== !bitfileDeployed
         },
         new CheckBox("Chip Reset") {
-          selected <==> DeviceInterfaceModel.ResetControls.chipReset
-          disable <== !DeviceInterfaceModel.bitfileDeployed ||
-            DeviceInterfaceModel.ResetControls.fpgaReset
+          selected <==> ResetControls.chipReset
+          disable <== !bitfileDeployed ||
+            ResetControls.fpgaReset
         }
       )
     }
@@ -85,18 +104,18 @@ object UsbCam3825FpgaControls {
     new TextField {
       prefColumnCount = 40
       promptText = "Enter bitfile path"
-      text <==> DeviceInterfaceModel.bitfilePath
-      disable <== DeviceInterfaceModel.bitfileDeployed
+      text <==> bitfilePath
+      disable <== bitfileDeployed
     }
   }
 
   private def createDeployBitfileButton: Button = {
     new Button("Deploy") {
       id = "deployBitfileButton"
-      disable <== DeviceInterfaceModel.bitfileDeployed
+      disable <== bitfileDeployed
       onAction = handle {
         try {
-          DeviceInterfaceModel.DeployBitfile()
+          DeployBitfile()
         } catch {
           case e: Exception =>
             val dialog = new DialogMessageStage("Error",
@@ -110,9 +129,9 @@ object UsbCam3825FpgaControls {
   private def createDisconnectFromFpgaButton: Button = {
     new Button("Disconnect") {
       id = "disconnectButton"
-      disable <== (!DeviceInterfaceModel.bitfileDeployed || DeviceInterfaceModel.testMode)
+      disable <== (!bitfileDeployed || testMode)
       onAction = handle {
-        DeviceInterfaceModel.DisconnectFromDevice()
+        DisconnectFromDevice()
       }
     }
   }
@@ -120,7 +139,7 @@ object UsbCam3825FpgaControls {
   private def createSelectBitfileButton: Button = {
     new Button("Select Bitfile") {
       id = "selectBitfileButton"
-      disable <== DeviceInterfaceModel.bitfileDeployed
+      disable <== bitfileDeployed
       onAction = handle {
         val fileChooser = new FileChooser() {
           title = "Pick an FPGA Bitfile"
@@ -129,7 +148,7 @@ object UsbCam3825FpgaControls {
         val bitfile = fileChooser.showOpenDialog(stage)
 
         if (bitfile != null) {
-          DeviceInterfaceModel.bitfilePath.value = bitfile.getAbsolutePath
+          bitfilePath.value = bitfile.getAbsolutePath
         }
       }
     }

@@ -43,15 +43,32 @@ object DeviceInterfaceModel {
     })
   }
 
+  object ChannelControls {
+    val channelEnabled = List(
+      BooleanProperty(value = false),
+      BooleanProperty(value = false),
+      BooleanProperty(value = false),
+      BooleanProperty(value = false)
+    )
+
+    for (i <- 0 to 3) {
+      channelEnabled(i).onChange(commandFactory.MakeChannelEnableCommand(i,channelEnabled(i).value).Execute())
+    }
+
+    val testFeedEnabled = BooleanProperty(value = false)
+
+    testFeedEnabled.onChange(commandFactory.MakeEnableTestFeedCommand(testFeedEnabled.value).Execute())
+  }
+
   object ResetControls {
     val fpgaReset = new BooleanProperty() {
       value = true
-      onChange(DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(this.value).Execute())
+      onChange(commandFactory.MakeFpgaResetCommand(this.value).Execute())
     }
 
     val chipReset = new BooleanProperty() {
       value = true
-      onChange(DeviceInterfaceModel.commandFactory.MakeRoicResetCommand(this.value).Execute())
+      onChange(commandFactory.MakeRoicResetCommand(this.value).Execute())
     }
   }
 
