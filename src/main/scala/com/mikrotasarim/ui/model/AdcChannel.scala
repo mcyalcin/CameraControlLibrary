@@ -82,7 +82,16 @@ object AdcChannel {
 
     val shortRefEnable = new BooleanProperty(this, "sre", false)
 
+    shortRefEnable.onChange({
+      BiasGenerator.biasGeneratorVoltageDacs(0).powerDown.value = shortRefEnable.value
+      BiasGenerator.biasGeneratorVoltageDacs(0).Commit()
+      BiasGenerator.biasGeneratorVoltageDacs(1).powerDown.value = shortRefEnable.value
+      BiasGenerator.biasGeneratorVoltageDacs(1).Commit()
+    })
+
     val bwPredrv = new IntegerProperty()
+
+    bwPredrv.onChange(CommitMemoryLocation(this))
 
     def memoryValue =
       bwPredrv.value * (2 pow 5) +
