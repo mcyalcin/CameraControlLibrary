@@ -17,7 +17,8 @@ object UsbCam3825AdcChannelControls {
         spacing = 30
         content = List(
           createAdcChannel("Top", AdcChannelTopSettings),
-          createAdcChannel("Bottom", AdcChannelBotSettings)
+          createAdcChannel("Bottom", AdcChannelBotSettings),
+          createPresetControls
         )
       }
     }
@@ -38,6 +39,24 @@ object UsbCam3825AdcChannelControls {
         }
       )
     }
+
+  private def createPresetControls = {
+    val stageChoiceBox = new ChoiceBox(AdcTestPresetLabels)
+    val versionChoiceBox = new ChoiceBox(AdcTestPresetVersionLabels)
+    new HBox {
+      spacing = 10
+      content = List(
+        stageChoiceBox,
+        versionChoiceBox,
+        new Button("Apply") {
+          tooltip = "Apply selected preset configuration."
+          onAction = handle {
+            ApplyPresets(stageChoiceBox.value.value, versionChoiceBox.value.value)
+          }
+        }
+      )
+    }
+  }
 
   private def createAdcChannelCommonControls(label: String, model: AdcChannelSettings): Node =
     new VBox {
@@ -139,9 +158,7 @@ object UsbCam3825AdcChannelControls {
             new Label("PGA Gain"),
             new ChoiceBox(model.pgaSettings.gainLabels) {
               selectionModel().select(5)
-              selectionModel().selectedItem.onChange(
-                (_, _, newValue) => model.pgaSettings.selectedGain.value = newValue
-              )
+              value <==> model.pgaSettings.selectedGain
             }
           )
         },
@@ -180,7 +197,7 @@ object UsbCam3825AdcChannelControls {
               selected <==> model.clockSettings.enPgaClk(index)
             },
             new CheckBox("sel clk mode"){
-              selected <==> model.clockSettings.selClkMode(index)
+              selected <==> model.clockSettings.enClkMode(index)
             }
           )
         },
@@ -219,7 +236,7 @@ object UsbCam3825AdcChannelControls {
                 new Label("Positive"),
                 new ChoiceBox(model.modePositive.channelModeLabels) {
                   selectionModel().select(3)
-                  selectionModel().selectedItem.onChange((_, _, newValue) => model.modePositive.selectedMode(index).value = newValue)
+                  value <==> model.modePositive.selectedMode(index)
                 }
               )
             },
@@ -229,7 +246,7 @@ object UsbCam3825AdcChannelControls {
                 new Label("Negative"),
                 new ChoiceBox(model.modeNegative.channelModeLabels) {
                   selectionModel().select(3)
-                  selectionModel().selectedItem.onChange((_, _, newValue) => model.modeNegative.selectedMode(index).value = newValue)
+                  value <==> model.modeNegative.selectedMode(index)
                 }
               )
             }
