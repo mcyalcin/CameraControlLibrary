@@ -6,7 +6,7 @@ import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.Insets
-import scalafx.scene.Scene
+import scalafx.scene.{Node, Scene}
 import scalafx.scene.control._
 import scalafx.scene.layout.{BorderPane, VBox}
 
@@ -26,6 +26,23 @@ object UsbCam3825TestUtility extends JFXApp {
 
   Reset()
 
+  private def createReadOutputControl: Node = new VBox {
+    spacing = 10
+    content = List(
+      new TextField {
+        promptText = "File path"
+        text <==> DeviceInterfaceModel.outFilePath
+      },
+      new TextField {
+        promptText = "Sample count"
+        text <==> DeviceInterfaceModel.sampleCount
+      },
+      new Button("Read") {
+        onAction = handle { DeviceInterfaceModel.ReadOutputIntoFile()}
+      }
+    )
+  }
+
   private def createTabs: TabPane = {
     new TabPane {
       tabs = List(
@@ -44,7 +61,7 @@ object UsbCam3825TestUtility extends JFXApp {
               spacing = 10
               content = List(
                 new Button("Reset") {
-                  disable = true
+                  disable = true // TODO: Enable pending implementation
                   tooltip = "Not Implemented Yet"
                 },
                 new Button("Memory Map") {
@@ -52,7 +69,8 @@ object UsbCam3825TestUtility extends JFXApp {
                     MtAs1410x2MemoryMap.ReadAsicMemory()
                     MtAs1410x2MemoryMapStage.show()
                   }
-                }
+                },
+                createReadOutputControl
               )
             }
             center = new TabPane {
@@ -89,7 +107,8 @@ object UsbCam3825TestUtility extends JFXApp {
         new Tab {
           text = "ROIC"
           closable = false
-          disable <== !DeviceInterfaceModel.bitfileDeployed
+          disable = true // TODO: Enable pending implementation
+//          disable <== !DeviceInterfaceModel.bitfileDeployed
           tooltip = "Not Implemented Yet"
           content = new BorderPane {
             left = new VBox {

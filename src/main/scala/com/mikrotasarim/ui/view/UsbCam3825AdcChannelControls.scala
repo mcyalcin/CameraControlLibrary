@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.AdcChannelSettings
+import com.mikrotasarim.ui.model.{DeviceInterfaceModel, AdcChannelSettings}
 import com.mikrotasarim.ui.model.DeviceInterfaceModel.adcChannel
 
 import scalafx.Includes._
@@ -18,9 +18,41 @@ object UsbCam3825AdcChannelControls {
         content = List(
           createAdcChannel("Top", adcChannel.AdcChannelTopSettings),
           createAdcChannel("Bottom", adcChannel.AdcChannelBotSettings),
-          createPresetControls
+          createPresetControls,
+          createSweepControls
         )
       }
+    }
+
+  private def createSweepControls: Node =
+    new VBox {
+      spacing = 10
+      content = List(
+        new HBox {
+          spacing = 10
+          content = List(
+            new Button("Dac Sweep 1") {
+              onAction = handle { DeviceInterfaceModel.RunDacSweepTest1() }
+            },
+            new TextField {
+              promptText = "Enter output file name"
+              text <==> DeviceInterfaceModel.dacSweepTest1OutFilePath
+            }
+          )
+        },
+        new HBox {
+          spacing = 10
+          content = List(
+            new Button("Dac Sweep 2") {
+              onAction = handle { DeviceInterfaceModel.RunDacSweepTest2() }
+            },
+            new TextField {
+              promptText = "Enter output file name"
+              text <==> DeviceInterfaceModel.dacSweepTest2OutFilePath
+            }
+          )
+        }
+      )
     }
 
   private def createAdcChannel(label: String, model: AdcChannelSettings): Node =

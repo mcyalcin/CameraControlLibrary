@@ -1,11 +1,22 @@
 package com.mikrotasarim.ui.model
 
+import java.util.concurrent.Executor
+
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.{ConsoleMockDeviceInterface, OpalKellyInterface}
 import com.mikrotasarim.ui.view.UsbCam3825TestUtility
 
+import scala.concurrent.{Future, ExecutionContext}
+import scalafx.application.Platform
 import scalafx.beans.property.{BooleanProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
+
+object JavaFXExecutionContext {
+  implicit val javaFxExecutionContext: ExecutionContext =
+    ExecutionContext.fromExecutor(new Executor {
+      def execute(command: Runnable): Unit = Platform.runLater(command)
+    })
+}
 
 object DeviceInterfaceModel {
 
@@ -64,6 +75,30 @@ object DeviceInterfaceModel {
   def ReadDigitalOutputChunk(): Unit = {
     commandFactory.MakeReadOutputChunkCommand().Execute()
   }
+
+  val outFilePath = StringProperty("")
+  val sampleCount = StringProperty("")
+
+  def ReadOutputIntoFile(): Unit = {
+    ReadOutputIntoFile(sampleCount.value.toInt, outFilePath.value)
+  }
+
+  def ReadOutputIntoFile(length: Int, filename: String): Unit = {
+    commandFactory.ReadOutputInfoFile(length, filename)
+  }
+
+  val dacSweepTest1OutFilePath = StringProperty("")
+  val dacSweepTest2OutFilePath = StringProperty("")
+
+  val ec = JavaFXExecutionContext.javaFxExecutionContext
+
+  def RunDacSweepTest1(): Unit = {
+    Future {
+      commandFactory.RunDacSweepTest1(dacSweepTest1OutFilePath.value)
+    }(ec)
+  }
+
+  def RunDacSweepTest2(): Unit = commandFactory.RunDacSweepTest2(dacSweepTest2OutFilePath.value)
 
   var adcChannel = new AdcChannel
   var biasGenerator = new BiasGenerator
