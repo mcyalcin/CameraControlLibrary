@@ -1,6 +1,6 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.BiasGenerator._
+import com.mikrotasarim.ui.model.DeviceInterfaceModel.biasGenerator
 
 import scalafx.Includes._
 import scalafx.geometry.Insets
@@ -19,32 +19,32 @@ object UsbCam3825BiasGeneratorControls {
             spacing = 20
             content = List(
               new CheckBox("Activate") {
-                selected <==> BiasGeneratorActivator.switch
+                selected <==> biasGenerator.BiasGeneratorActivator.switch
               },
               new HBox {
                 spacing = 10
                 content = List(
                   new CheckBox("Power Down Top") {
-                    selected <==> BiasGeneratorPowerSettings.powerDownTop
+                    selected <==> biasGenerator.BiasGeneratorPowerSettings.powerDownTop
                   },
                   new CheckBox("Power Down Bottom") {
-                    selected <==> BiasGeneratorPowerSettings.powerDownBot
+                    selected <==> biasGenerator.BiasGeneratorPowerSettings.powerDownBot
                   }
                 )
               },
               new HBox {
                 spacing = 20
                 content = List(
-                  new ChoiceBox(BiasGeneratorTestSettings.voltageTestLabels) {
+                  new ChoiceBox(biasGenerator.BiasGeneratorTestSettings.voltageTestLabels) {
                     selectionModel().selectFirst()
                     selectionModel().selectedItem.onChange(
-                      (_, _, newValue) => BiasGeneratorTestSettings.selectedVoltageTest.value = newValue
+                      (_, _, newValue) => biasGenerator.BiasGeneratorTestSettings.selectedVoltageTest.value = newValue
                     )
                   },
-                  new ChoiceBox(BiasGeneratorTestSettings.currentTestLabels){
+                  new ChoiceBox(biasGenerator.BiasGeneratorTestSettings.currentTestLabels){
                     selectionModel().selectFirst()
                     selectionModel().selectedItem.onChange(
-                      (_, _, newValue) => BiasGeneratorTestSettings.selectedCurrentTest.value = newValue
+                      (_, _, newValue) => biasGenerator.BiasGeneratorTestSettings.selectedCurrentTest.value = newValue
                     )
                   }
                 )
@@ -64,8 +64,8 @@ object UsbCam3825BiasGeneratorControls {
     }
   }
 
-  private def createBiasGeneratorCurrentDacControls: List[Node] = UsbCam3825UiHelper.createDacControls(biasGeneratorCurrentDacs, "%3.0f", "uA", 1)
+  private def createBiasGeneratorCurrentDacControls: List[Node] = UsbCam3825UiHelper.createDacControls(biasGenerator.biasGeneratorCurrentDacs, "%3.0f", "uA", 1)
 
-  private def createBiasGeneratorVoltageDacControls: List[Node] = UsbCam3825UiHelper.createDacControls(biasGeneratorVoltageDacs, "%1.3f", "V", 0.001)
+  private def createBiasGeneratorVoltageDacControls: List[Node] = UsbCam3825UiHelper.createDacControls(biasGenerator.biasGeneratorVoltageDacs, "%1.3f", "V", 0.001)
 
 }

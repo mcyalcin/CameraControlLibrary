@@ -1,7 +1,7 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.AdcChannel.AdcChannelSettings
-import com.mikrotasarim.ui.model.AdcChannel._
+import com.mikrotasarim.ui.model.AdcChannelSettings
+import com.mikrotasarim.ui.model.DeviceInterfaceModel.adcChannel
 
 import scalafx.Includes._
 import scalafx.geometry.Insets
@@ -16,8 +16,8 @@ object UsbCam3825AdcChannelControls {
         padding = Insets(10)
         spacing = 30
         content = List(
-          createAdcChannel("Top", AdcChannelTopSettings),
-          createAdcChannel("Bottom", AdcChannelBotSettings),
+          createAdcChannel("Top", adcChannel.AdcChannelTopSettings),
+          createAdcChannel("Bottom", adcChannel.AdcChannelBotSettings),
           createPresetControls
         )
       }
@@ -41,8 +41,8 @@ object UsbCam3825AdcChannelControls {
     }
 
   private def createPresetControls = {
-    val stageChoiceBox = new ChoiceBox(AdcTestPresetLabels)
-    val versionChoiceBox = new ChoiceBox(AdcTestPresetVersionLabels)
+    val stageChoiceBox = new ChoiceBox(adcChannel.AdcTestPresetLabels)
+    val versionChoiceBox = new ChoiceBox(adcChannel.AdcTestPresetVersionLabels)
     new HBox {
       spacing = 10
       content = List(
@@ -51,7 +51,7 @@ object UsbCam3825AdcChannelControls {
         new Button("Apply") {
           tooltip = "Apply selected preset configuration."
           onAction = handle {
-            ApplyPresets(stageChoiceBox.value.value, versionChoiceBox.value.value)
+            adcChannel.ApplyPresets(stageChoiceBox.value.value, versionChoiceBox.value.value)
           }
         }
       )

@@ -7,9 +7,17 @@ import DeviceInterfaceModel.{CommitMemoryLocation, MemoryLocation}
 
 import scalafx.collections.ObservableBuffer
 
-object DigitalController {
+abstract class DigPadDrive {
+  val label: String
+  val strength: IntegerProperty
+  val changed: BooleanProperty
+  def Commit(): Unit
+  def Reset(): Unit
+}
 
-  class DigPadDrive(val label: String, val address: Int, val offset: Int, val defaultValue: Int) {
+class DigitalController {
+
+  class DigPadDriveImpl(val label: String, val address: Int, val offset: Int, val defaultValue: Int) extends DigPadDrive{
 
     def this(label: String, address: Int, offset: Int) = this(label, address, offset, 3)
 
@@ -41,28 +49,28 @@ object DigitalController {
   }
 
   val digPadDrives = List(
-    new DigPadDrive("sb_flash", 95, 0),
-    new DigPadDrive("sio_flash_out<3>", 95, 3),
-    new DigPadDrive("sio_flash_out<2>", 95, 6),
-    new DigPadDrive("sio_flash_out<1>", 95, 9),
-    new DigPadDrive("sio_flash_out<0>", 95, 12),
-    new DigPadDrive("clk_flash", 94, 0),
-    new DigPadDrive("fsync_roic", 94, 3),
-    new DigPadDrive("rstb_roic", 94, 6),
-    new DigPadDrive("slatch_roic", 94, 9),
-    new DigPadDrive("sdin_roic<3>", 94, 12),
-    new DigPadDrive("sdin_roic<2>", 93, 0),
-    new DigPadDrive("sdin_roic<1>", 93, 3),
-    new DigPadDrive("sdin_roic<0>", 93, 6),
-    new DigPadDrive("sysclk_roic", 93, 9),
-    new DigPadDrive("sdout_asic", 93, 12, 7),
-    new DigPadDrive("digtest<1>", 92, 0),
-    new DigPadDrive("digtest<0>", 92, 3),
-    new DigPadDrive("digtest_tg<4>", 92, 6),
-    new DigPadDrive("digtest_tg<3>", 92, 9),
-    new DigPadDrive("digtest_tg<2>", 92, 12),
-    new DigPadDrive("digtest_tg<1>", 91, 0),
-    new DigPadDrive("digtest_tg<0>", 91, 3)
+    new DigPadDriveImpl("sb_flash", 95, 0),
+    new DigPadDriveImpl("sio_flash_out<3>", 95, 3),
+    new DigPadDriveImpl("sio_flash_out<2>", 95, 6),
+    new DigPadDriveImpl("sio_flash_out<1>", 95, 9),
+    new DigPadDriveImpl("sio_flash_out<0>", 95, 12),
+    new DigPadDriveImpl("clk_flash", 94, 0),
+    new DigPadDriveImpl("fsync_roic", 94, 3),
+    new DigPadDriveImpl("rstb_roic", 94, 6),
+    new DigPadDriveImpl("slatch_roic", 94, 9),
+    new DigPadDriveImpl("sdin_roic<3>", 94, 12),
+    new DigPadDriveImpl("sdin_roic<2>", 93, 0),
+    new DigPadDriveImpl("sdin_roic<1>", 93, 3),
+    new DigPadDriveImpl("sdin_roic<0>", 93, 6),
+    new DigPadDriveImpl("sysclk_roic", 93, 9),
+    new DigPadDriveImpl("sdout_asic", 93, 12, 7),
+    new DigPadDriveImpl("digtest<1>", 92, 0),
+    new DigPadDriveImpl("digtest<0>", 92, 3),
+    new DigPadDriveImpl("digtest_tg<4>", 92, 6),
+    new DigPadDriveImpl("digtest_tg<3>", 92, 9),
+    new DigPadDriveImpl("digtest_tg<2>", 92, 12),
+    new DigPadDriveImpl("digtest_tg<1>", 91, 0),
+    new DigPadDriveImpl("digtest_tg<0>", 91, 3)
   ).reverse
 
   val digTest0Options = ListMap(

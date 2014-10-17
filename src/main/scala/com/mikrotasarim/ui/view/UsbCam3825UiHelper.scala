@@ -1,7 +1,7 @@
 package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.DacControlModel
-import com.mikrotasarim.ui.model.OutputStage.BiasCurrent
+import com.mikrotasarim.ui.model.BiasCurrent
 
 import scalafx.Includes._
 import scalafx.beans.property.{BooleanProperty, IntegerProperty}

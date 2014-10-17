@@ -65,8 +65,20 @@ object DeviceInterfaceModel {
     commandFactory.MakeReadOutputChunkCommand().Execute()
   }
 
+  var adcChannel = new AdcChannel
+  var biasGenerator = new BiasGenerator
+  var digitalController = new DigitalController
+  var outputStage = new OutputStage
+  var timingGenerator = new TimingGenerator
+
   object ResetControls {
     def RestoreDefaults(): Unit = {
+      adcChannel = new AdcChannel
+      biasGenerator = new BiasGenerator
+      digitalController = new DigitalController
+      outputStage = new OutputStage
+      timingGenerator = new TimingGenerator
+
       UsbCam3825TestUtility.Reset()
     }
 

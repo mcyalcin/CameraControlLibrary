@@ -6,9 +6,76 @@ import scalafx.beans.property.{DoubleProperty, StringProperty, IntegerProperty, 
 import scalafx.collections.ObservableBuffer
 import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
-object OutputStage {
+abstract class Pad {
+  val cmosLvdsLabels: ObservableBuffer[String]
+  val cmosSelected: BooleanProperty
+  val singleDifferentialLabels: ObservableBuffer[String]
+  val singleSelected: BooleanProperty
+  val terminationResolutionLabels: ObservableBuffer[String]
+  val lowTerminationResolution: BooleanProperty
+  val label: String
+  val changed: BooleanProperty
+  val power: IntegerProperty
+  val enableTermination: BooleanProperty
+  val powerDown: BooleanProperty
 
-  class Pad(val label: String) {
+  def Commit(): Unit
+  def Reset(): Unit
+}
+
+class BiasCurrent(override val address: Int, val initValue: Int, val maxValue: Double) extends MemoryLocation {
+  val resolutions = ListMap(
+    3.125 -> "01",
+    6.25 -> "10",
+    9.375 -> "11"
+  )
+
+  val resLabels = ObservableBuffer(resolutions.keys.toList)
+
+  val resolution = DoubleProperty(6.25)
+
+  val displayValue = DoubleProperty(resolution.value * initValue)
+
+  val sliderValue = IntegerProperty(initValue)
+
+  resolution.onChange({
+    sliderValue.value = displayValue.value / resolution.value
+    UpdateDisplayValue()
+  })
+
+  sliderValue.onChange(
+    UpdateDisplayValue()
+  )
+
+  def UpdateDisplayValue() = {
+    changed.value = true
+    displayValue.value = sliderValue.value * resolution.value
+    if (displayValue.value > maxValue) {
+      sliderValue.value = maxValue / resolution.value
+      displayValue.value = sliderValue.value * resolution.value
+    }
+  }
+
+  val changed = BooleanProperty(value = false)
+
+  def Commit() = {
+    CommitMemoryLocation(this)
+    changed.value = false
+  }
+
+  def Reset() = {
+    sliderValue.value = initValue
+    Commit()
+  }
+
+  override def memoryValue = {
+    sliderValue.value * 2 + Integer.parseInt(resolutions(resolution.value), 2) * (2 pow 7)
+  }
+}
+
+class OutputStage {
+
+  class PadImpl(val label: String) extends Pad {
 
     def UpdateChanged(): Unit = {
       changed.value = committedCmosSelected != cmosSelected.value ||
@@ -76,65 +143,16 @@ object OutputStage {
     }
   }
 
-  class BiasCurrent(override val address: Int, val initValue: Int, val maxValue: Double) extends MemoryLocation {
-    val resolutions = ListMap(
-      3.125 -> "01",
-      6.25 -> "10",
-      9.375 -> "11"
-    )
-
-    val resLabels = ObservableBuffer(resolutions.keys.toList)
-
-    val resolution = DoubleProperty(6.25)
-
-    val displayValue = DoubleProperty(resolution.value * initValue)
-
-    val sliderValue = IntegerProperty(initValue)
-
-    resolution.onChange({
-      sliderValue.value = displayValue.value / resolution.value
-      UpdateDisplayValue()
-    })
-
-    sliderValue.onChange(
-      UpdateDisplayValue()
-    )
-
-    def UpdateDisplayValue() = {
-      changed.value = true
-      displayValue.value = sliderValue.value * resolution.value
-      if (displayValue.value > maxValue) {
-        sliderValue.value = maxValue / resolution.value
-        displayValue.value = sliderValue.value * resolution.value
-      }
-    }
-
-    val changed = BooleanProperty(value = false)
-
-    def Commit() = {
-      CommitMemoryLocation(this)
-      changed.value = false
-    }
-
-    def Reset() = {
-      sliderValue.value = initValue
-      Commit()
-    }
-
-    override def memoryValue = {
-      sliderValue.value * 2 + Integer.parseInt(resolutions(resolution.value), 2) * (2 pow 7)
-    }
-  }
 
   val padMap = ListMap(
-    new Pad("Serial Output 0") ->(30, 0, 0),
-    new Pad("Serial Output 1") ->(30, 3, 1),
-    new Pad("Serial Output 2") ->(29, 0, 6),
-    new Pad("Serial Output 3") ->(29, 3, 7),
-    new Pad("Frame Valid") ->(30, 6, 2),
-    new Pad("Data Valid") ->(29, 9, 5),
-    new Pad("Data Frame Clock") ->(30, 9, 3),
-    new Pad("Output Data Clock") ->(29, 6, 4)
+    new PadImpl("Serial Output 0") ->(30, 0, 0),
+    new PadImpl("Serial Output 1") ->(30, 3, 1),
+    new PadImpl("Serial Output 2") ->(29, 0, 6),
+    new PadImpl("Serial Output 3") ->(29, 3, 7),
+    new PadImpl("Frame Valid") ->(30, 6, 2),
+    new PadImpl("Data Valid") ->(29, 9, 5),
+    new PadImpl("Data Frame Clock") ->(30, 9, 3),
+    new PadImpl("Output Data Clock") ->(29, 6, 4)
   )
 
   val pads = padMap.keys.toList
@@ -339,24 +357,24 @@ object OutputStage {
     30 -> new drivePowerMemoryLocation(30)
   )
 
-  class AdcTestMemory(val label: String, override val address: Int) extends MemoryLocation {
+  val adcTestMemoryTop = new AdcTestMemory("Top", 28)
+  val adcTestMemoryBot = new AdcTestMemory("Bottom", 38)
+}
 
-    val hexString = StringProperty("0000")
-    val binaryString = StringProperty("0000 0000 0000 0000")
+class AdcTestMemory(val label: String, override val address: Int) extends MemoryLocation {
 
-    def Commit() = {
-      val string = String.format("%16s", Integer.parseInt(hexString.value, 16).toBinaryString).replace(' ', '0')
-      binaryString.value =
-        string.substring(0, 4) + " " +
+  val hexString = StringProperty("0000")
+  val binaryString = StringProperty("0000 0000 0000 0000")
+
+  def Commit() = {
+    val string = String.format("%16s", Integer.parseInt(hexString.value, 16).toBinaryString).replace(' ', '0')
+    binaryString.value =
+      string.substring(0, 4) + " " +
         string.substring(4, 8) + " " +
         string.substring(8, 12) + " " +
         string.substring(12, 16) + " "
-      CommitMemoryLocation(this)
-    }
-
-    override def memoryValue = Integer.parseInt(hexString.value, 16)
+    CommitMemoryLocation(this)
   }
 
-  val adcTestMemoryTop = new AdcTestMemory("Top", 28)
-  val adcTestMemoryBot = new AdcTestMemory("Bottom", 38)
+  override def memoryValue = Integer.parseInt(hexString.value, 16)
 }

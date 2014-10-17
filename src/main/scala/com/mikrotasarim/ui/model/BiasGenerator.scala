@@ -6,7 +6,7 @@ import scala.collection.immutable.ListMap
 import scalafx.beans.property.{StringProperty, BooleanProperty}
 import scalafx.collections.ObservableBuffer
 
-object BiasGenerator {
+class BiasGenerator {
   object BiasGeneratorPowerSettings extends MemoryLocation {
     val powerDownTop = new BooleanProperty(this, "top", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}
     val powerDownBot = new BooleanProperty(this, "bot", false) {onChange(CommitMemoryLocation(BiasGeneratorPowerSettings))}

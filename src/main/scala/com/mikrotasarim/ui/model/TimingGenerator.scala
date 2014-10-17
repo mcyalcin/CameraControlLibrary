@@ -8,7 +8,8 @@ import scalafx.beans.property.{IntegerProperty, StringProperty, BooleanProperty}
 import scalafx.beans.value.ObservableValue
 import scalafx.collections.ObservableBuffer
 
-object TimingGenerator {
+class TimingGenerator {
+
   object TimingGeneratorMainControls extends MemoryLocation {
     val enable = new BooleanProperty(this, "enable", false) {
       onChange(CommitMemoryLocation(TimingGeneratorMainControls))
@@ -121,46 +122,46 @@ object TimingGenerator {
       (if (selLfCap.value) 2 pow 15 else 0) +
         selVctrl.value * (2 pow 12) +
         (if (enVctrlExt.value) 2 pow 11 else 0) +
-        Integer.parseInt(analogCurrentTests(selectedCurrentTest.value),2) * (2 pow 7) +
-        Integer.parseInt(analogVoltageTests(selectedVoltageTest.value),2)
+        Integer.parseInt(analogCurrentTests(selectedCurrentTest.value), 2) * (2 pow 7) +
+        Integer.parseInt(analogVoltageTests(selectedVoltageTest.value), 2)
   }
 
   object TimingGeneratorDigitalTestControls extends MemoryLocation {
 
     val testOutput0 = ListMap(
-      "No signal selected" -> (0,0,0),
-      "ref_clk" -> (1,0,0),
-      "ref_clk_buf" -> (1,0,1),
-      "pga_s_rise" -> (1,1,0),
-      "pga_s_fall" -> (1,1,2)
+      "No signal selected" ->(0, 0, 0),
+      "ref_clk" ->(1, 0, 0),
+      "ref_clk_buf" ->(1, 0, 1),
+      "pga_s_rise" ->(1, 1, 0),
+      "pga_s_fall" ->(1, 1, 2)
     )
     val testOutput1 = ListMap(
-      "No signal selected" -> (0,0,0),
-      "pga_a_rise" -> (1,0,0),
-      "pga_a_fall" -> (1,0,1),
-      "adc_odd_s_rise" -> (1,1,0),
-      "adc_odd_s_fall" -> (1,1,2)
+      "No signal selected" ->(0, 0, 0),
+      "pga_a_rise" ->(1, 0, 0),
+      "pga_a_fall" ->(1, 0, 1),
+      "adc_odd_s_rise" ->(1, 1, 0),
+      "adc_odd_s_fall" ->(1, 1, 2)
     )
     val testOutput2 = ListMap(
-      "No signal selected" -> (0,0,0),
-      "adc_odd_a_rise" -> (1,0,0),
-      "adc_odd_a_fall" -> (1,0,1),
-      "adc_even_s_rise" -> (1,1,0),
-      "adc_even_s_fall" -> (1,1,2)
+      "No signal selected" ->(0, 0, 0),
+      "adc_odd_a_rise" ->(1, 0, 0),
+      "adc_odd_a_fall" ->(1, 0, 1),
+      "adc_even_s_rise" ->(1, 1, 0),
+      "adc_even_s_fall" ->(1, 1, 2)
     )
     val testOutput3 = ListMap(
-      "No signal selected" -> (0,0,0),
-      "adc_even_a_rise" -> (1,0,0),
-      "adc_even_a_fall" -> (1,0,1),
-      "phi_pga_s" -> (1,1,0),
-      "phi_pga_a" -> (1,1,2)
+      "No signal selected" ->(0, 0, 0),
+      "adc_even_a_rise" ->(1, 0, 0),
+      "adc_even_a_fall" ->(1, 0, 1),
+      "phi_pga_s" ->(1, 1, 0),
+      "phi_pga_a" ->(1, 1, 2)
     )
     val testOutput4 = ListMap(
-      "No signal selected" -> (0,0,0),
-      "phi_adc_odd_s" -> (1,0,0),
-      "phi_adc_odd_a" -> (1,0,1),
-      "phi_adc_even_s" -> (1,1,0),
-      "phi_adc_even_a" -> (1,1,2)
+      "No signal selected" ->(0, 0, 0),
+      "phi_adc_odd_s" ->(1, 0, 0),
+      "phi_adc_odd_a" ->(1, 0, 1),
+      "phi_adc_even_s" ->(1, 1, 0),
+      "phi_adc_even_a" ->(1, 1, 2)
     )
 
     val testOutput0Labels = ObservableBuffer(testOutput0.keys.toList)
@@ -172,16 +173,16 @@ object TimingGenerator {
     val selectedTestOutput0 = new StringProperty("No signal selected") {
       onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
     }
-    val selectedTestOutput1 = new StringProperty("No signal selected"){
+    val selectedTestOutput1 = new StringProperty("No signal selected") {
       onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
     }
-    val selectedTestOutput2 = new StringProperty("No signal selected"){
+    val selectedTestOutput2 = new StringProperty("No signal selected") {
       onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
     }
-    val selectedTestOutput3 = new StringProperty("No signal selected"){
+    val selectedTestOutput3 = new StringProperty("No signal selected") {
       onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
     }
-    val selectedTestOutput4 = new StringProperty("No signal selected"){
+    val selectedTestOutput4 = new StringProperty("No signal selected") {
       onChange(CommitMemoryLocation(TimingGeneratorDigitalTestControls))
     }
 
@@ -235,8 +236,6 @@ object TimingGenerator {
     CreateTimingGeneratorCurrentDac("ibias_vcdl", 3, 6)
   )
 
-
-
   val phaseSignals = ObservableBuffer(
     CreatePhaseSignal("pga_s", "10000101111110", 13),
     CreatePhaseSignal("pga_a", "00001000111100", 14),
@@ -249,7 +248,7 @@ object TimingGenerator {
   val lockPhaseSignals = new BooleanProperty(this, "lockPhaseSignals", false)
   val phaseSignalsChanged = new BooleanProperty(this, "phaseSignalsChanged", false)
 
-  class PhaseSignal(val label: String, val fallen : Int, val risen : Int, val address: Int) {
+  class PhaseSignalImpl(val label: String, val fallen: Int, val risen: Int, val address: Int) extends PhaseSignal {
     val fall = new IntegerProperty(this, "fall", fallen)
     val rise = new IntegerProperty(this, "rise", risen)
 
@@ -287,8 +286,8 @@ object TimingGenerator {
     def memoryValue = fall.value * 128 + rise.value
   }
 
-  private def CreatePhaseSignal(label: String, defaultValueString: String, address: Int): PhaseSignal = {
-    new PhaseSignal(label, Integer.parseInt(defaultValueString.substring(0,7),2), Integer.parseInt(defaultValueString.substring(7),2), address)
+  private def CreatePhaseSignal(label: String, defaultValueString: String, address: Int): PhaseSignalImpl = {
+    new PhaseSignalImpl(label, Integer.parseInt(defaultValueString.substring(0, 7), 2), Integer.parseInt(defaultValueString.substring(7), 2), address)
   }
 
   def CommitPhaseSignals() {
@@ -310,4 +309,10 @@ object TimingGenerator {
     }
     CommitPhaseSignals()
   }
+}
+
+abstract class PhaseSignal {
+  val label: String
+  val fall: IntegerProperty
+  val rise: IntegerProperty
 }

@@ -1,6 +1,7 @@
 package com.mikrotasarim.ui.view
 
 import UsbCam3825UiHelper._
+import com.mikrotasarim.ui.model.DigPadDrive
 
 import scalafx.Includes._
 import scalafx.collections.ObservableBuffer
@@ -9,7 +10,7 @@ import scalafx.scene.Node
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 
-import com.mikrotasarim.ui.model.DigitalController._
+import com.mikrotasarim.ui.model.DeviceInterfaceModel.digitalController
 
 object UsbCam3825DigitalControllerControls {
 
@@ -28,10 +29,10 @@ object UsbCam3825DigitalControllerControls {
     spacing = 10
     content = List(
       new CheckBox("Frame Start") {
-        selected <==> frameStartSelected
+        selected <==> digitalController.frameStartSelected
       },
       new CheckBox("Auto") {
-        selected <==> autoSelected
+        selected <==> digitalController.autoSelected
       }
     )
   }
@@ -39,9 +40,9 @@ object UsbCam3825DigitalControllerControls {
   private def createSignalControls = new HBox {
     spacing = 10
     content = List(
-      createLabeledBooleanDropdown("Flash Clock", clockSpeedLabels, slowFlashClock),
-      createLabeledBooleanDropdown("Pixel Clock", internalRoicLabels, internalPixelClock),
-      createLabeledBooleanDropdown("Dval/Fval ", internalRoicLabels, internalDvalFval)
+      createLabeledBooleanDropdown("Flash Clock", digitalController.clockSpeedLabels, digitalController.slowFlashClock),
+      createLabeledBooleanDropdown("Pixel Clock", digitalController.internalRoicLabels, digitalController.internalPixelClock),
+      createLabeledBooleanDropdown("Dval/Fval ", digitalController.internalRoicLabels, digitalController.internalDvalFval)
     )
   }
 
@@ -54,10 +55,10 @@ object UsbCam3825DigitalControllerControls {
     spacing = 5
     content = List(
       new Label("digtest" + index),
-      new ChoiceBox(ObservableBuffer(digTestOptions(index).keys.toList)) {
+      new ChoiceBox(ObservableBuffer(digitalController.digTestOptions(index).keys.toList)) {
         selectionModel().selectFirst()
         selectionModel().selectedItem.onChange(
-          (_, _, newValue) => digTestSelection(index).value = newValue
+          (_, _, newValue) => digitalController.digTestSelection(index).value = newValue
         )
       }
     )
@@ -65,7 +66,7 @@ object UsbCam3825DigitalControllerControls {
 
   private def createDriveControls = new VBox {
     spacing = 5
-    content = Label("Drive Pad Strengths") +: digPadDrives.map(createDriveControl)
+    content = Label("Drive Pad Strengths") +: digitalController.digPadDrives.map(createDriveControl)
   }
 
   private def createDriveControl(drive: DigPadDrive): Node = {
