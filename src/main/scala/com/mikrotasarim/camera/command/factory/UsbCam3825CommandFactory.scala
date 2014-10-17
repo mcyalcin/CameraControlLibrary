@@ -10,14 +10,14 @@ import scala.collection.immutable.IndexedSeq
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
   def ConvertToWords(bytes: Array[Byte]): Array[Long] = {
-    (for (i <- 0 until bytes.length by 4) yield bytesToWord(bytes(i),bytes(i+1),bytes(i+2),bytes(i+3))).toArray
+    (for (i <- 0 until bytes.length by 4) yield bytesToWord(bytes(i), bytes(i + 1), bytes(i + 2), bytes(i + 3))).toArray
   }
 
   def ComputeStats(words: Array[Long]): Stats = {
 
     val mean = words.sum.toDouble / words.length.toDouble
-    val devs = words.map(w => Math.abs(w-mean))
-    val stdev = Math.sqrt(devs.map(d => d*d).sum / words.length)
+    val devs = words.map(w => Math.abs(w - mean))
+    val stdev = Math.sqrt(devs.map(d => d * d).sum / words.length)
     val min = words.min
     val max = words.max
 
@@ -26,10 +26,10 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
   def RunDacSweepTest: Array[Stats] = {
 
-    val buf0 = Array.ofDim[Byte](256*4)
-    val buf1 = Array.ofDim[Byte](256*4)
-    val buf2 = Array.ofDim[Byte](256*4)
-    val buf3 = Array.ofDim[Byte](256*4)
+    val buf0 = Array.ofDim[Byte](256 * 4)
+    val buf1 = Array.ofDim[Byte](256 * 4)
+    val buf2 = Array.ofDim[Byte](256 * 4)
+    val buf3 = Array.ofDim[Byte](256 * 4)
     device.ReadFromBlockPipeOut(DigitalOutputPipe0, buf0.length, buf0)
     device.ReadFromBlockPipeOut(DigitalOutputPipe1, buf1.length, buf1)
     device.ReadFromBlockPipeOut(DigitalOutputPipe2, buf2.length, buf2)
@@ -43,8 +43,8 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   def RunDacSweepTest1(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80,i).Execute()
-      MakeReadOutputCommand(256*4).Execute()
+      MakeWriteToAsicMemoryTopCommand(80, i).Execute()
+      MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
     }
@@ -73,9 +73,9 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   def RunDacSweepTest2(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80,i).Execute()
-      MakeWriteToAsicMemoryTopCommand(79,(0xe24+0x378)-i).Execute()
-      MakeReadOutputCommand(256*4).Execute()
+      MakeWriteToAsicMemoryTopCommand(80, i).Execute()
+      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i).Execute()
+      MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
     }
@@ -95,7 +95,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   )
 
   def bytesToWord(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Long = {
-    ((b0+256)%256) + ((b1+256)%256) * 256l + ((b2+256)%256) * 256l * 256l + ((b3+256)%256) * 256l * 256l * 256l
+    ((b0 + 256) % 256) + ((b1 + 256) % 256) * 256l + ((b2 + 256) % 256) * 256l * 256l + ((b3 + 256) % 256) * 256l * 256l * 256l
   }
 
   // TODO: Divide this functionality, or replace altogether.
@@ -119,10 +119,10 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
     for (i <- 0 until length by 4) {
       stringBuilder.append(
-        bytesToWord(buf0(i), buf0(i+1), buf0(i+2), buf0(i+3)) + ", " +
-        bytesToWord(buf1(i), buf1(i+1), buf1(i+2), buf1(i+3)) + ", " +
-        bytesToWord(buf2(i), buf2(i+1), buf2(i+2), buf2(i+3)) + ", " +
-        bytesToWord(buf3(i), buf3(i+1), buf3(i+2), buf3(i+3)) + "\n"
+        bytesToWord(buf0(i), buf0(i + 1), buf0(i + 2), buf0(i + 3)) + ", " +
+          bytesToWord(buf1(i), buf1(i + 1), buf1(i + 2), buf1(i + 3)) + ", " +
+          bytesToWord(buf2(i), buf2(i + 1), buf2(i + 2), buf2(i + 3)) + ", " +
+          bytesToWord(buf3(i), buf3(i + 1), buf3(i + 2), buf3(i + 3)) + "\n"
       )
     }
 
@@ -252,23 +252,40 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     )
   }
 
-  def MakeReadFromFlashMemoryCommand(startAddress: Int, data: Array[Byte]): Command = {
+  def ReadFromFlashMemory(startAddress: Int, length: Int): Array[Byte] = {
     if (startAddress < 0) throw new Exception("Illegal start address")
-    if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
+    if (startAddress + length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
 
-    val numberOfFullBlocks = data.length / FlashBlockSize
+    val numberOfFullBlocks = length / FlashBlockSize
 
-    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
+    val result = (for (i <- 0 until numberOfFullBlocks) yield {
+      ReadFlashBlock(startAddress + i * FlashBlockSize, FlashBlockSize)
+    }).flatten.toArray
 
-    // TODO: Read flash memory
-    //    val blockWriteCommandList = (
-    //      for (i <- 0 to numberOfFullBlocks) yield
-    //        MakeWriteFlashBlockCommand(
-    //          startAddress + i * FlashBlockSize,
-    //          data.slice(i * FlashBlockSize, (i + 1) * FlashBlockSize)
-    //        )
-    //      ).toList
-    //    new CompositeCommand(blockWriteCommandList)
+    if (length % FlashBlockSize == 0) result
+    else {
+      result ++ ReadFlashBlock(startAddress + numberOfFullBlocks * FlashBlockSize, length - numberOfFullBlocks * FlashBlockSize)
+    }
+  }
+
+  def ReadFlashBlock(startAddress: Int, length: Int): Array[Byte] = {
+    if (length > FlashBlockSize) throw new Exception("Flash block size violation")
+
+    val command = new CompositeCommand(List(
+      MakeSetWireInValueCommand(AsicCommandWire, ReadFromFlashMemoryCommand),
+      MakeSetWireInValueCommand(FlashCommandWire, FlashReadCommand),
+      MakeSetWireInValueCommand(AddressWire, startAddress),
+      MakeSetWireInValueCommand(DataWire, length),
+      MakeUpdateWireInsCommand()
+    ))
+
+    command.Execute()
+
+    val buf = new Array[Byte](length)
+
+    device.ReadFromPipeOut(ReadPipe, length, buf)
+
+    buf
   }
 
   def MakeReadFromRoicNucMemoryCommand() = ???
