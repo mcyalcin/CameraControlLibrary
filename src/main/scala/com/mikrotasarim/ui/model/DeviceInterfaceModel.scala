@@ -2,6 +2,7 @@ package com.mikrotasarim.ui.model
 
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.{ConsoleMockDeviceInterface, OpalKellyInterface}
+import com.mikrotasarim.ui.view.UsbCam3825TestUtility
 
 import scalafx.beans.property.{BooleanProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
@@ -65,6 +66,10 @@ object DeviceInterfaceModel {
   }
 
   object ResetControls {
+    def RestoreDefaults(): Unit = {
+      UsbCam3825TestUtility.Reset()
+    }
+
     val fpgaReset = new BooleanProperty() {
       value = true
       onChange(commandFactory.MakeFpgaResetCommand(this.value).Execute())
@@ -72,7 +77,10 @@ object DeviceInterfaceModel {
 
     val chipReset = new BooleanProperty() {
       value = true
-      onChange(commandFactory.MakeRoicResetCommand(this.value).Execute())
+      onChange({
+        commandFactory.MakeRoicResetCommand(this.value).Execute()
+        RestoreDefaults()
+      })
     }
   }
 

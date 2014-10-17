@@ -34,6 +34,10 @@ class OpalKellyInterface(bitFileName: String) extends DeviceInterface {
   override def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte]): Unit =
     panel.WriteToBlockPipeIn(address, blockSize, size, data)
 
+  override def ReadFromBlockPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = {
+    panel.ReadFromBlockPipeOut(address, 64, size, data)
+  }
+
   override def UpdateWireIns(): Unit = panel.UpdateWireIns()
 
   def IsFrontPanel3Supported(): Boolean = panel.IsFrontPanel3Supported()

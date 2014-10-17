@@ -34,4 +34,6 @@ class ConsoleMockDeviceInterface extends DeviceInterface {
   override def UpdateWireOuts(): Unit = println("Wire Outs Updated")
 
   override def ReadFromPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = ???
+
+  override def ReadFromBlockPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = ???
 }

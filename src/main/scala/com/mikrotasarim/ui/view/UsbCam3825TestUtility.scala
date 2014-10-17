@@ -12,16 +12,25 @@ import scalafx.scene.layout.{BorderPane, VBox}
 
 object UsbCam3825TestUtility extends JFXApp {
 
-  stage = new PrimaryStage {
-    title = "Mikro-Tasarım UsbCam3825 Test Utility"
-    scene = new Scene(800, 600) {
+  def Reset(): Unit = {
+    stage.scene = new Scene(stage.scene.width.intValue(), stage.scene.height.intValue()) {
       root = new BorderPane {
         center = createTabs
       }
     }
   }
 
-  stage.setMaximized(true)
+  stage = new PrimaryStage {
+    title = "Mikro-Tasarım UsbCam3825 Test Utility"
+//    scene = new Scene(800, 600) {
+//      root = new BorderPane {
+//        center = createTabs
+//      }
+//    }
+  }
+//  stage.setMaximized(true)
+
+  Reset()
 
   private def createTabs: TabPane = {
     new TabPane {

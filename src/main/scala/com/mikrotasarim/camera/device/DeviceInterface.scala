@@ -8,6 +8,7 @@ trait DeviceInterface {
   def ActivateTriggerIn(address: Int, bit: Int)
   def WriteToPipeIn(address: Int, size: Int, data: Array[Byte])
   def ReadFromPipeOut(address: Int, size: Int, data: Array[Byte])
+  def ReadFromBlockPipeOut(address: Int, size: Int, data: Array[Byte])
   def WriteToBlockPipeIn(address: Int, blockSize: Int, size: Int, data: Array[Byte])
   def UpdateWireIns()
   def Disconnect()

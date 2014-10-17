@@ -6,41 +6,43 @@ import com.mikrotasarim.camera.device._
 class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
 
   def MakeReadOutputChunkCommand(): Command = {
-    val buf0 = Array.ofDim[Byte](4096)
-    val buf1 = Array.ofDim[Byte](4096)
-    val buf2 = Array.ofDim[Byte](4096)
-    val buf3 = Array.ofDim[Byte](4096)
-    device.ReadFromPipeOut(DigitalOutputPipe0, buf0.length, buf0)
+    MakeFpgaSetProgrammableFullAssertCommand(2000)
+    MakeFpgaSetProgrammableFullNegateCommand(1999)
+//    val buf0 = Array.ofDim[Byte](4096)
+//    val buf1 = Array.ofDim[Byte](8192)
+    val buf2 = Array.ofDim[Byte](16384)
+    val buf3 = Array.ofDim[Byte](32768)
+//    device.ReadFromBlockPipeOut(DigitalOutputPipe0, buf0.length, buf0)
+//    println(System.currentTimeMillis())
+//    device.ReadFromBlockPipeOut(DigitalOutputPipe1, buf1.length, buf1)
+//    println(System.currentTimeMillis())
+    device.ReadFromBlockPipeOut(DigitalOutputPipe2, buf2.length, buf2)
     println(System.currentTimeMillis())
-    device.ReadFromPipeOut(DigitalOutputPipe1, buf1.length, buf1)
+    device.ReadFromBlockPipeOut(DigitalOutputPipe3, buf3.length, buf3)
     println(System.currentTimeMillis())
-    device.ReadFromPipeOut(DigitalOutputPipe2, buf2.length, buf2)
-    println(System.currentTimeMillis())
-    device.ReadFromPipeOut(DigitalOutputPipe3, buf3.length, buf3)
-    println(System.currentTimeMillis())
-    println("TROLOLO0")
-    for (i <- 0 until buf0.length by 4) {
-      print((buf0(i+3) + 256) % 256)
-      print(" ")
-      print((buf0(i+2) + 256) % 256)
-      print(" ")
-      print((buf0(i+1) + 256) % 256)
-      print(" ")
-      print((buf0(i) + 256) % 256)
-      println()
-    }
-    println("TROLOLO1")
-    for (i <- 0 until buf1.length by 4) {
-      print((buf1(i+3) + 256) % 256)
-      print(" ")
-      print((buf1(i+2) + 256) % 256)
-      print(" ")
-      print((buf1(i+1) + 256) % 256)
-      print(" ")
-      print((buf1(i) + 256) % 256)
-      println()
-    }
-    println("TROLOLO2")
+//    println("== buf0 ==")
+//    for (i <- 0 until buf0.length by 4) {
+//      print((buf0(i+3) + 256) % 256)
+//      print(" ")
+//      print((buf0(i+2) + 256) % 256)
+//      print(" ")
+//      print((buf0(i+1) + 256) % 256)
+//      print(" ")
+//      print((buf0(i) + 256) % 256)
+//      println()
+//    }
+//    println("== buf1 ==")
+//    for (i <- 0 until buf1.length by 4) {
+//      print((buf1(i+3) + 256) % 256)
+//      print(" ")
+//      print((buf1(i+2) + 256) % 256)
+//      print(" ")
+//      print((buf1(i+1) + 256) % 256)
+//      print(" ")
+//      print((buf1(i) + 256) % 256)
+//      println()
+//    }
+    println("== buf2 ==")
     for (i <- 0 until buf2.length by 4) {
       print((buf2(i+3) + 256) % 256)
       print(" ")
@@ -51,7 +53,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
       print((buf2(i) + 256) % 256)
       println()
     }
-    println("TROLOLO3")
+    println("== buf3 ==")
     for (i <- 0 until buf3.length by 4) {
       print((buf3(i+3) + 256) % 256)
       print(" ")
@@ -64,6 +66,16 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     }
     new SimpleCommand(() => println("Ok"))
   }
+
+  def MakeFpgaSetProgrammableFullAssertCommand(address: Long): Command = new CompositeCommand(List(
+    MakeFpgaConfigurationCommand(address * 0x100, 0x7FF00),
+    MakeUpdateWireInsCommand()
+  ))
+
+  def MakeFpgaSetProgrammableFullNegateCommand(address: Long): Command = new CompositeCommand(List(
+    MakeFpgaConfigurationCommand(address * 0x100000, 0x7FF00000),
+    MakeUpdateWireInsCommand()
+  ))
 
   def MakeFpgaDvalFvalSelectionCommand(embeddedDvalFval: Boolean): Command = new CompositeCommand(List(
     MakeFpgaConfigurationCommand(if (embeddedDvalFval) EmbeddedDvalFval else 0, EmbeddedDvalFval),
@@ -366,6 +378,7 @@ trait UsbCam3825Constants {
   val WriteToFlashMemoryCommand = 0xf1
   val SoftResetAsicCommand = 0xa0
   val SoftResetRoicCommand = 0xa1
+  val ReadDataOutCommand = 0xd0
 
   // Commands to be used on FlashCommandWire, along with read or write to flash memory asic commands
   val FlashReadCommand = 0x0b
