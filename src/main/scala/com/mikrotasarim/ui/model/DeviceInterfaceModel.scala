@@ -70,6 +70,10 @@ object DeviceInterfaceModel {
     val testFeedEnabled = BooleanProperty(value = false)
 
     testFeedEnabled.onChange(commandFactory.MakeEnableTestFeedCommand(testFeedEnabled.value).Execute())
+
+    val sweepTestFeedEnabled = BooleanProperty(value = false)
+
+    sweepTestFeedEnabled.onChange(commandFactory.EnableDacSweepTest(sweepTestFeedEnabled.value))
   }
 
   def ReadDigitalOutputChunk(): Unit = {

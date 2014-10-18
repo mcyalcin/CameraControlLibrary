@@ -44,6 +44,9 @@ object UsbCam3825FpgaControls {
         new CheckBox("Test Feed on Channels") {
           selected <==> ChannelControls.testFeedEnabled
         } :+
+        new CheckBox("Dac Sweep Test Feed on Channels") {
+          selected <==> ChannelControls.sweepTestFeedEnabled
+        } :+
         new Button("Read") {
           onAction = handle {
             ReadDigitalOutputChunk()

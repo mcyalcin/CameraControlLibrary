@@ -2,7 +2,7 @@ package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.MtAs1410x2MemoryMap._
 
-import scalafx.beans.property.StringProperty
+import scalafx.Includes._
 import scalafx.scene.{Node, Scene}
 import scalafx.scene.control.{Label, Button, TextField, ScrollPane}
 import scalafx.scene.layout.{HBox, VBox}
@@ -21,18 +21,19 @@ object MtAs1410x2MemoryMapStage extends Stage {
     }
   }
 
-  private def createMemoryLocationControl(model: StringProperty): Node = {
+  private def createMemoryLocationControl(model: MemLoc): Node = {
     new HBox {
       spacing = 10
       content = List(
-        new Label("Addr: ") {
+        new Label("Addr: " + model.addr) {
           prefWidth = 75
         },
         new TextField {
-          text <==> model
-
+          text <==> model.text
         },
-        new Button("Commit")
+        new Button("Commit") {
+          onAction = handle { model.Commit() }
+        }
       )
     }
   }
