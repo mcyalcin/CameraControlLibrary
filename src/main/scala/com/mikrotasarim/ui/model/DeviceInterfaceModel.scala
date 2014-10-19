@@ -88,7 +88,7 @@ object DeviceInterfaceModel {
   }
 
   def ReadOutputIntoFile(length: Int, filename: String): Unit = {
-    commandFactory.ReadOutputInfoFile(length, filename)
+    commandFactory.ReadOutputIntoFile(length, filename)
   }
 
   val dacSweepTest1OutFilePath = StringProperty("")

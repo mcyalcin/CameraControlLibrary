@@ -2,12 +2,13 @@ package com.mikrotasarim.camera.command.factory
 
 import java.io.{File, FileWriter}
 
+import spire.implicits._
 import com.mikrotasarim.camera.command._
 import com.mikrotasarim.camera.device._
 
 import scala.collection.immutable.IndexedSeq
 
-class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Constants {
+class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Constants {
 
   def ConvertToWords(bytes: Array[Byte]): Array[Long] = {
     (for (i <- 0 until bytes.length by 4) yield bytesToWord(bytes(i), bytes(i + 1), bytes(i + 2), bytes(i + 3))).toArray
@@ -43,7 +44,8 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   def RunDacSweepTest1(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80, i).Execute()
+      MakeWriteToAsicMemoryTopCommand(80, i + (2 pow 14) + (2 pow 12)).Execute()
+
       MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
@@ -67,14 +69,14 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   }
 
   class Stats(val mean: Double, val stdev: Double, val min: Long, val max: Long) {
-    override def toString = "(" + mean + ", " + stdev + ", " + min + ", " + max + ")"
+    override def toString = mean + ", " + stdev + ", " + min + ", " + max
   }
 
   def RunDacSweepTest2(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80, i).Execute()
-      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i).Execute()
+      MakeWriteToAsicMemoryTopCommand(80, i + (2 pow 14) + (2 pow 12)).Execute()
+      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + (2 pow 14) + (2 pow 12)).Execute();;;;;
       MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
@@ -91,15 +93,17 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
   def MakeReadOutputCommand(length: Int): Command = new CompositeCommand(List(
     MakeSetWireInValueCommand(AsicCommandWire, ReadDataOutCommand),
-    MakeSetWireInValueCommand(DataWire, length))
-  )
+    MakeSetWireInValueCommand(DataWire, length),
+    MakeUpdateWireInsCommand(),
+    MakeActivateTriggerInCommand(0x40,0)
+  ))
 
   def bytesToWord(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Long = {
     ((b0 + 256) % 256) + ((b1 + 256) % 256) * 256l + ((b2 + 256) % 256) * 256l * 256l + ((b3 + 256) % 256) * 256l * 256l * 256l
   }
 
   // TODO: Divide this functionality, or replace altogether.
-  def ReadOutputInfoFile(length: Int, filename: String): Unit = {
+  def ReadOutputIntoFile(length: Int, filename: String): Unit = {
 
     val command = MakeReadOutputCommand(length)
     command.Execute()
@@ -132,40 +136,40 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   def MakeReadOutputChunkCommand(): Command = {
     MakeFpgaSetProgrammableFullAssertCommand(2000)
     MakeFpgaSetProgrammableFullNegateCommand(1999)
-    //    val buf0 = Array.ofDim[Byte](4096)
-    //    val buf1 = Array.ofDim[Byte](8192)
+    val buf0 = Array.ofDim[Byte](4096)
+    val buf1 = Array.ofDim[Byte](8192)
     val buf2 = Array.ofDim[Byte](16384)
     val buf3 = Array.ofDim[Byte](32768)
-    //    device.ReadFromBlockPipeOut(DigitalOutputPipe0, buf0.length, buf0)
-    //    println(System.currentTimeMillis())
-    //    device.ReadFromBlockPipeOut(DigitalOutputPipe1, buf1.length, buf1)
-    //    println(System.currentTimeMillis())
+    device.ReadFromBlockPipeOut(DigitalOutputPipe0, buf0.length, buf0)
+    println(System.currentTimeMillis())
+    device.ReadFromBlockPipeOut(DigitalOutputPipe1, buf1.length, buf1)
+    println(System.currentTimeMillis())
     device.ReadFromBlockPipeOut(DigitalOutputPipe2, buf2.length, buf2)
     println(System.currentTimeMillis())
     device.ReadFromBlockPipeOut(DigitalOutputPipe3, buf3.length, buf3)
     println(System.currentTimeMillis())
-    //    println("== buf0 ==")
-    //    for (i <- 0 until buf0.length by 4) {
-    //      print((buf0(i+3) + 256) % 256)
-    //      print(" ")
-    //      print((buf0(i+2) + 256) % 256)
-    //      print(" ")
-    //      print((buf0(i+1) + 256) % 256)
-    //      print(" ")
-    //      print((buf0(i) + 256) % 256)
-    //      println()
-    //    }
-    //    println("== buf1 ==")
-    //    for (i <- 0 until buf1.length by 4) {
-    //      print((buf1(i+3) + 256) % 256)
-    //      print(" ")
-    //      print((buf1(i+2) + 256) % 256)
-    //      print(" ")
-    //      print((buf1(i+1) + 256) % 256)
-    //      print(" ")
-    //      print((buf1(i) + 256) % 256)
-    //      println()
-    //    }
+    println("== buf0 ==")
+    for (i <- 0 until buf0.length by 4) {
+      print((buf0(i + 3) + 256) % 256)
+      print(" ")
+      print((buf0(i + 2) + 256) % 256)
+      print(" ")
+      print((buf0(i + 1) + 256) % 256)
+      print(" ")
+      print((buf0(i) + 256) % 256)
+      println()
+    }
+    println("== buf1 ==")
+    for (i <- 0 until buf1.length by 4) {
+      print((buf1(i + 3) + 256) % 256)
+      print(" ")
+      print((buf1(i + 2) + 256) % 256)
+      print(" ")
+      print((buf1(i + 1) + 256) % 256)
+      print(" ")
+      print((buf1(i) + 256) % 256)
+      println()
+    }
     println("== buf2 ==")
     for (i <- 0 until buf2.length by 4) {
       print((buf2(i + 3) + 256) % 256)
@@ -215,6 +219,11 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
     MakeFpgaConfigurationCommand(if (enable) EnableTestFeedOnChannels else 0, EnableTestFeedOnChannels),
     MakeUpdateWireInsCommand()
   ))
+
+  def EnableDacSweepTest(enable: Boolean): Unit = {
+    MakeSetWireInValueCommand(TestWire, if (enable) SweepTestEnable else 0).Execute()
+    MakeUpdateWireInsCommand().Execute()
+  }
 
   def MakeReadFromAsicMemoryTopCommand(address: Int, callback: (Long) => Unit): Command = {
     new CompositeCommand(
@@ -315,6 +324,21 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
   def MakeFpgaConfigurationCommand(bit: Long, mask: Long): Command = {
     new SimpleCommand(() => device.SetWireInValue(FpgaConfigWire, bit, mask))
   }
+  
+  def MakeFlashSectorEraseCommand(address: Int): Command = {
+    if (address < 0) throw new Exception("Illegal start address")
+    if (address + FlashBlockSize > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
+
+    val sectorEraseCommandList = List(
+      MakeSetWireInValueCommand(AsicCommandWire, WriteToFlashMemoryCommand),
+      MakeSetWireInValueCommand(AddressWire, address),
+      MakeSetWireInValueCommand(FlashCommandWire, FlashSectorErase),
+      MakeUpdateWireInsCommand(),
+      MakeActivateTriggerInCommand(TriggerWire, 0)
+    )
+
+    return new CompositeCommand(sectorEraseCommandList)
+  }
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
     if (startAddress < 0) throw new Exception("Illegal start address")
@@ -322,6 +346,7 @@ class UsbCam3825CommandFactory(device: DeviceInterface) extends UsbCam3825Consta
 
     val numberOfFullBlocks = data.length / FlashBlockSize
 
+    // TODO: WTF? This should go into some command list.
     MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
 
     val blockWriteCommandList = (
@@ -476,6 +501,8 @@ trait UsbCam3825Constants {
   val AddressWire = 0x02
   val DataWire = 0x03
 
+  val TestWire = 0x06
+
   // 0x20 - 0x3F WireOut
   val ReadWire = 0x20
 
@@ -494,6 +521,9 @@ trait UsbCam3825Constants {
   val DigitalOutputPipe1 = 0xa2
   val DigitalOutputPipe2 = 0xa3
   val DigitalOutputPipe3 = 0xa4
+
+  // Test Commands
+  val SweepTestEnable: Long = 2 pow 31
 
   // Reset bits. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
   val FpgaReset = 1
