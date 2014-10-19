@@ -105,9 +105,9 @@ class OutputStage {
     enableTermination.onChange(UpdateChanged())
     var committedEnableTermination = false
 
-    val powerDown = BooleanProperty(value = false)
+    val powerDown = BooleanProperty(value = true)
     powerDown.onChange(UpdateChanged())
-    var committedPowerDown = false
+    var committedPowerDown = true
 
     val terminationResolutionLabels = ObservableBuffer("3.5 mA", "7.0 mA")
     val highTerminationResolution = BooleanProperty(value = false)
@@ -167,7 +167,9 @@ class OutputStage {
   testSelected.onChange(CommitMemoryLocation(muxWord))
 
   val msbLsbLabels = ObservableBuffer("Least Significant Bit", "Most Significant Bit")
-  val msbSelected = new BooleanProperty()
+  val selectedMsb = StringProperty("Most Significant Bit")
+  val msbSelected = BooleanProperty(value = true)
+  selectedMsb.onChange(msbSelected.value = selectedMsb.value == "Most Significant Bit")
   msbSelected.onChange(CommitMemoryLocation(muxWord))
 
   val inputs = ListMap(
@@ -196,9 +198,9 @@ class OutputStage {
   msbSelected.onChange(
     msbLsbHelpText.value =
       if (msbSelected.value)
-        "0..13 dval fval"
-      else
         "fval dval 13..0"
+      else
+        "0..13 dval fval"
   )
 
   val msbLsbHelpText = StringProperty("fval dval 13..0")

@@ -126,10 +126,7 @@ object UsbCam3825OutputStageControls {
                     spacing = 10
                     content = List(
                       new ChoiceBox(outputStage.msbLsbLabels) {
-                        selectionModel().selectLast()
-                        selectionModel().selectedItem.onChange(
-                          (_, _, newValue) => outputStage.msbSelected.value = "Least Significant Bit" == newValue
-                        )
+                        value <==> outputStage.selectedMsb
                       },
                       new Label {
                         text <== outputStage.msbLsbHelpText
