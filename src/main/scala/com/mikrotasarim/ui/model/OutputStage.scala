@@ -8,11 +8,12 @@ import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 abstract class Pad {
   val cmosLvdsLabels: ObservableBuffer[String]
+  val selectedCmosLvds: StringProperty
   val cmosSelected: BooleanProperty
   val singleDifferentialLabels: ObservableBuffer[String]
   val singleSelected: BooleanProperty
   val terminationResolutionLabels: ObservableBuffer[String]
-  val lowTerminationResolution: BooleanProperty
+  val selectedTerminationResolution: StringProperty
   val label: String
   val changed: BooleanProperty
   val power: IntegerProperty
@@ -81,13 +82,15 @@ class OutputStage {
       changed.value = committedCmosSelected != cmosSelected.value ||
         committedEnableTermination != enableTermination.value ||
         committedPower != power.value || committedSingleSelected != singleSelected.value ||
-        committedPowerDown != powerDown.value || committedLowResolution != lowTerminationResolution.value
+        committedPowerDown != powerDown.value || committedHighResolution != highTerminationResolution.value
     }
 
     val cmosLvdsLabels = ObservableBuffer("CMOS", "LVDS")
-    val cmosSelected = BooleanProperty(value = true)
+    val cmosSelected = BooleanProperty(value = false)
+    val selectedCmosLvds = StringProperty("LVDS")
+    selectedCmosLvds.onChange(cmosSelected.value = selectedCmosLvds.value == "CMOS")
     cmosSelected.onChange(UpdateChanged())
-    var committedCmosSelected = true
+    var committedCmosSelected = false
 
     val power = IntegerProperty(3)
     power.onChange(UpdateChanged())
@@ -107,9 +110,11 @@ class OutputStage {
     var committedPowerDown = false
 
     val terminationResolutionLabels = ObservableBuffer("3.5 mA", "7.0 mA")
-    val lowTerminationResolution = BooleanProperty(value = false)
-    lowTerminationResolution.onChange(UpdateChanged())
-    var committedLowResolution = false
+    val highTerminationResolution = BooleanProperty(value = false)
+    val selectedTerminationResolution = StringProperty("3.5 mA")
+    selectedTerminationResolution.onChange(highTerminationResolution.value = selectedTerminationResolution.value == "7.0 mA")
+    highTerminationResolution.onChange(UpdateChanged())
+    var committedHighResolution = false
 
     val changed = BooleanProperty(value = false)
 
@@ -124,21 +129,21 @@ class OutputStage {
         committedPower = power.value
         CommitMemoryLocation(memoryLocations(padMap(this)._1))
       }
-      if (committedPowerDown != powerDown.value || committedLowResolution != lowTerminationResolution.value) {
+      if (committedPowerDown != powerDown.value || committedHighResolution != highTerminationResolution.value) {
         committedPowerDown = powerDown.value
-        committedLowResolution = lowTerminationResolution.value
+        committedHighResolution = highTerminationResolution.value
         CommitMemoryLocation(pdResWord)
       }
       changed.value = false
     }
 
     def Reset() = {
-      cmosSelected.value = true
+      selectedCmosLvds.value = "LVDS"
       enableTermination.value = false
       power.value = 3
       singleSelected.value = false
       powerDown.value = false
-      lowTerminationResolution.value = false
+      selectedTerminationResolution.value = "3.5 mA"
       Commit()
     }
   }
@@ -233,7 +238,7 @@ class OutputStage {
 
     override def memoryValue = {
       padMap.keys.toList.filter(_.committedPowerDown).map(p => 2 pow (8 + padMap(p)._3)).sum +
-        padMap.keys.toList.filter(_.committedLowResolution).map(2 pow padMap(_)._3).sum
+        padMap.keys.toList.filter(_.committedHighResolution).map(2 pow padMap(_)._3).sum
     }
   }
 

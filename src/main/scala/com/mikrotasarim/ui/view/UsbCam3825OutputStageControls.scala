@@ -199,10 +199,7 @@ object UsbCam3825OutputStageControls {
 
   private def createPadControls(pad: Pad): Node = {
     val cmosLvdsChoiceBox = new ChoiceBox(pad.cmosLvdsLabels) {
-      selectionModel().selectFirst()
-      selectionModel().selectedItem.onChange(
-        (_, _, newValue) => pad.cmosSelected.value = newValue == "CMOS"
-      )
+      value <==> pad.selectedCmosLvds
     }
     val singleDifferentialChoiceBox = new ChoiceBox(pad.singleDifferentialLabels) {
       selectionModel().selectLast()
@@ -211,10 +208,7 @@ object UsbCam3825OutputStageControls {
       )
     }
     val terminationResolutionChoiceBox = new ChoiceBox(pad.terminationResolutionLabels) {
-      selectionModel().selectLast()
-      selectionModel().selectedItem.onChange(
-        (_, _, newValue) => pad.lowTerminationResolution.value = newValue == "3.5 mA"
-      )
+      value <==> pad.selectedTerminationResolution
     }
 
     new VBox {
