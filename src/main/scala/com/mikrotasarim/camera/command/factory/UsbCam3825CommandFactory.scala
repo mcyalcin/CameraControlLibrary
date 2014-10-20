@@ -126,7 +126,13 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
         bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
         bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)))
 
-      val strings = if (radix == 2) words.map(_.toBinaryString) else if (radix == 10) words.map(_.toString) else words.map(_.toHexString)
+      val strings =
+        if (radix == 2)
+          words.map("0000000000000000" + _.toBinaryString takeRight (if (sixteenBitMode) 8 else 16))
+        else if (radix == 10)
+          words.map("00000" + _.toString takeRight (if (sixteenBitMode) 3 else 5))
+        else
+          words.map("0000" + _.toHexString takeRight (if (sixteenBitMode) 2 else 4))
 
       stringBuilder.append(
         strings(0) + ", " +
