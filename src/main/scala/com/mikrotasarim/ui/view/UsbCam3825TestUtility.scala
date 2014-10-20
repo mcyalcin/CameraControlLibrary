@@ -37,6 +37,13 @@ object UsbCam3825TestUtility extends JFXApp {
         promptText = "Sample count"
         text <==> DeviceInterfaceModel.sampleCount
       },
+      new CheckBox("16 bit mode") {
+        tooltip = "Output 16 LSBs instead of full 32"
+        selected <==> DeviceInterfaceModel.sixteenBitMode
+      },
+      new ChoiceBox(DeviceInterfaceModel.outputFormatOptions) {
+        value <==> DeviceInterfaceModel.selectedOutputFormat
+      },
       new Button("Read") {
         onAction = handle { DeviceInterfaceModel.ReadOutputIntoFile()}
       }

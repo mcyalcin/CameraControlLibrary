@@ -76,7 +76,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
     val stats = for (i <- 0x378 until 0xe24) yield {
       MakeWriteToAsicMemoryTopCommand(80, i + (2 pow 14) + (2 pow 12)).Execute()
-      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + (2 pow 14) + (2 pow 12)).Execute();;;;;
+      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + (2 pow 14) + (2 pow 12)).Execute()
       MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
@@ -92,10 +92,8 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     using(new FileWriter(file, appending))(_.write(data))
 
   def MakeReadOutputCommand(length: Int): Command = new CompositeCommand(List(
-    MakeSetWireInValueCommand(AsicCommandWire, ReadDataOutCommand),
-    MakeSetWireInValueCommand(DataWire, length),
-    MakeUpdateWireInsCommand(),
-    MakeActivateTriggerInCommand(0x40,0)
+    MakeEnableTestFeedCommand(enable = false),
+    MakeEnableTestFeedCommand(enable = true)
   ))
 
   def bytesToWord(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Long = {
@@ -103,7 +101,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   }
 
   // TODO: Divide this functionality, or replace altogether.
-  def ReadOutputIntoFile(length: Int, filename: String): Unit = {
+  def ReadOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean, radix: Int): Unit = {
 
     val command = MakeReadOutputCommand(length)
     command.Execute()
@@ -122,11 +120,19 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     val stringBuilder = new StringBuilder
 
     for (i <- 0 until length by 4) {
+      val words =
+        List(bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
+        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
+        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
+        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)))
+
+      val strings = if (radix == 2) words.map(_.toBinaryString) else if (radix == 10) words.map(_.toString) else words.map(_.toHexString)
+
       stringBuilder.append(
-        bytesToWord(buf0(i), buf0(i + 1), buf0(i + 2), buf0(i + 3)) + ", " +
-          bytesToWord(buf1(i), buf1(i + 1), buf1(i + 2), buf1(i + 3)) + ", " +
-          bytesToWord(buf2(i), buf2(i + 1), buf2(i + 2), buf2(i + 3)) + ", " +
-          bytesToWord(buf3(i), buf3(i + 1), buf3(i + 2), buf3(i + 3)) + "\n"
+        strings(0) + ", " +
+        strings(1) + ", " +
+        strings(2) + ", " +
+        strings(3) + "\n"
       )
     }
 
@@ -134,12 +140,14 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   }
 
   def MakeReadOutputChunkCommand(): Command = {
-    MakeFpgaSetProgrammableFullAssertCommand(2000)
-    MakeFpgaSetProgrammableFullNegateCommand(1999)
-    val buf0 = Array.ofDim[Byte](4096)
-    val buf1 = Array.ofDim[Byte](8192)
-    val buf2 = Array.ofDim[Byte](16384)
-    val buf3 = Array.ofDim[Byte](32768)
+    val buf0 = Array.ofDim[Byte](1024)
+    buf0(0) = 1
+    val buf1 = Array.ofDim[Byte](1024)
+    val buf2 = Array.ofDim[Byte](1024)
+    val buf3 = Array.ofDim[Byte](1024)
+
+    MakeReadOutputCommand(1024).Execute()
+
     device.ReadFromPipeOut(DigitalOutputPipe0, buf0.length, buf0)
     println(System.currentTimeMillis())
     device.ReadFromPipeOut(DigitalOutputPipe1, buf1.length, buf1)
@@ -221,6 +229,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   ))
 
   def EnableDacSweepTest(enable: Boolean): Unit = {
+    // TODO: Mask this if there is anything else on wire
     MakeSetWireInValueCommand(TestWire, if (enable) SweepTestEnable else 0).Execute()
     MakeUpdateWireInsCommand().Execute()
   }
@@ -337,7 +346,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
       MakeActivateTriggerInCommand(TriggerWire, 0)
     )
 
-    return new CompositeCommand(sectorEraseCommandList)
+    new CompositeCommand(sectorEraseCommandList)
   }
 
   def MakeWriteToFlashMemoryCommand(startAddress: Long, data: Array[Byte]): Command = {
@@ -523,7 +532,7 @@ trait UsbCam3825Constants {
   val DigitalOutputPipe3 = 0xa4
 
   // Test Commands
-  val SweepTestEnable: Long = 2 pow 31
+  val SweepTestEnable = 2147483648l
 
   // Reset bits. These are supposed to set one bit on a 32 bit wire, so powers of two are assigned.
   val FpgaReset = 1

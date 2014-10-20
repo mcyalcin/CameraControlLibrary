@@ -82,13 +82,18 @@ object DeviceInterfaceModel {
 
   val outFilePath = StringProperty("")
   val sampleCount = StringProperty("")
+  val sixteenBitMode = BooleanProperty(value = false)
+
+  val outputFormatOptions = ObservableBuffer("Binary", "Decimal", "Hexadecimal")
+  val selectedOutputFormat = StringProperty("Decimal")
 
   def ReadOutputIntoFile(): Unit = {
-    ReadOutputIntoFile(sampleCount.value.toInt, outFilePath.value)
+    ReadOutputIntoFile(sampleCount.value.toInt, outFilePath.value, sixteenBitMode.value)
   }
 
-  def ReadOutputIntoFile(length: Int, filename: String): Unit = {
-    commandFactory.ReadOutputIntoFile(length, filename)
+  def ReadOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean): Unit = {
+    val radix = if (selectedOutputFormat.value == "Binary") 2 else if (selectedOutputFormat.value == "Decimal") 10 else 16
+    commandFactory.ReadOutputIntoFile(length, filename, sixteenBitMode, radix)
   }
 
   val dacSweepTest1OutFilePath = StringProperty("")
