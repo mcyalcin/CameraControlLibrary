@@ -1,7 +1,8 @@
 package com.mikrotasarim.camera.probe
 
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
-import com.mikrotasarim.ui.model.MtAs1410x2MemoryMap
+import com.mikrotasarim.ui.model.{DeviceInterfaceModel, MtAs1410x2MemoryMap}
+import jssc.SerialPort
 
 import scala.collection.mutable
 
@@ -13,9 +14,14 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
   class MemoryTestResult(val pass: Boolean, val errorCount: Int, val errors: List[(Int,Int)])
 
+  def Reset(): Unit = {
+    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = true).Execute()
+    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = false).Execute()
+  }
+
   def RunAsicMemoryDefaultValueTest(): MemoryTestResult = {
 
-    // Reset
+    Reset()
 
     val errors:mutable.SortedSet[(Int, Int)] = mutable.SortedSet()
 
@@ -31,7 +37,7 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
   def RunAsicMemoryToggleTest(): MemoryTestResult = {
 
-    // Reset
+    Reset()
 
     val errors:mutable.SortedSet[(Int, Int)] = mutable.SortedSet()
 
@@ -81,42 +87,53 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
   def RunPowerConsumptionTest(): PowerConsumptionTestResult = {
 
-    // Reset
+    Reset()
 
+    val serialPort = new SerialPort("COM5")
+    serialPort.openPort()
+    serialPort.setParams(9600,8,1,0)
+    serialPort.writeString("SYST:REM\n")
+    serialPort.writeString("OUTP ON\n")
     commandFactory.MakeRoicResetCommand(reset = true).Execute()
-    // resetCurrent = MeasureCurrent()
+
+    def MeasureCurrent() = {
+      serialPort.writeString("MEAS:CURR?\n")
+      serialPort.readString().toDouble
+    }
+
+    val resetCurrent = MeasureCurrent()
     commandFactory.MakeRoicResetCommand(reset = false).Execute()
-    // runningCurrent = MeasureCurrent()
+    val runningCurrent = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(40,5)
-    // biasGenCurrent = MeasureCurrent()
+    val biasGenCurrent = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(19,14)
-    // timingGenCurrent = MeasureCurrent()
+    val timingGenCurrent = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(21,0x14)
     commandFactory.MakeWriteToAsicMemoryTopCommand(24,0x8)
     commandFactory.MakeWriteToAsicMemoryTopCommand(25,0x8)
     commandFactory.MakeWriteToAsicMemoryTopCommand(26,0x16)
     commandFactory.MakeWriteToAsicMemoryTopCommand(27,0x152)
-    // adc0Current = MeasureCurrent()
+    val adc0Current = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(21,0x3c)
     commandFactory.MakeWriteToAsicMemoryTopCommand(24,0x108)
     commandFactory.MakeWriteToAsicMemoryTopCommand(25,0x108)
     commandFactory.MakeWriteToAsicMemoryTopCommand(26,0x14)
     commandFactory.MakeWriteToAsicMemoryTopCommand(27,0)
-    // adc1Current = MeasureCurrent()
+    val adc1Current = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(82,0x14)
     commandFactory.MakeWriteToAsicMemoryTopCommand(85,0x8)
     commandFactory.MakeWriteToAsicMemoryTopCommand(86,0x8)
     commandFactory.MakeWriteToAsicMemoryTopCommand(87,0x16)
     commandFactory.MakeWriteToAsicMemoryTopCommand(88,0x152)
-    // adc2Current = MeasureCurrent()
+    val adc2Current = MeasureCurrent()
     commandFactory.MakeWriteToAsicMemoryTopCommand(82,0x3c)
     commandFactory.MakeWriteToAsicMemoryTopCommand(85,0x108)
     commandFactory.MakeWriteToAsicMemoryTopCommand(86,0x108)
     commandFactory.MakeWriteToAsicMemoryTopCommand(87,0x14)
     commandFactory.MakeWriteToAsicMemoryTopCommand(88,0)
-    // adc3Current = MeasureCurrent()
+    val adc3Current = MeasureCurrent()
 
-    /*new PowerConsumptionTestResult(
+    new PowerConsumptionTestResult(
       resetCurrent,
       runningCurrent,
       biasGenCurrent,
@@ -125,15 +142,14 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
       adc1Current,
       adc2Current,
       adc3Current
-    )*/
-    ???
+    )
   }
 
   var dieNumber = 0
 
   def RunFlashInterfaceTest(): Boolean = {
 
-    // Reset
+    Reset()
 
     val testData = new Array[Byte](256)
     commandFactory.MakeWriteToFlashMemoryCommand(dieNumber,testData).Execute()
@@ -150,7 +166,7 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
   def RunRoicInterfaceTest(): Boolean = {
 
-    // Reset
+    Reset()
 
     var pass = true
 
@@ -164,7 +180,7 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
   def RunOutputStageTest(): Boolean = {
 
-    // Reset
+    Reset()
 
     val testPatternTop = 0x1234
     val testPatternBot = 0x4321
@@ -184,5 +200,4 @@ class ProbeTestController(commandFactory: UsbCam3825CommandFactory) {
 
     commandFactory.ConvertToWords(buf0)(0) == testPatternTop && commandFactory.ConvertToWords(buf2)(0) == testPatternBot
   }
-
 }

@@ -2,16 +2,20 @@ package com.mikrotasarim.camera.command.factory
 
 import java.io.{File, FileWriter}
 
-import spire.implicits._
 import com.mikrotasarim.camera.command._
 import com.mikrotasarim.camera.device._
 
 import scala.collection.immutable.IndexedSeq
 
 class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Constants {
+  def ChangeSpeedFactor(factor: Int): Unit = {
+    MakeSetWireInValueCommand(0x7,factor).Execute()
+    MakeUpdateWireInsCommand().Execute()
+    MakeActivateTriggerInCommand(0x40,0).Execute()
+  }
 
   def ConvertToWords(bytes: Array[Byte]): Array[Long] = {
-    (for (i <- 0 until bytes.length by 4) yield bytesToWord(bytes(i), bytes(i + 1), bytes(i + 2), bytes(i + 3))).toArray
+    (for (i <- 0 until bytes.length by 4) yield bytesToWord(bytes(i), bytes(i + 1), 0, 0)).toArray
   }
 
   def ComputeStats(words: Array[Long]): Stats = {
@@ -44,7 +48,12 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   def RunDacSweepTest1(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80, i + (2 pow 14) + (2 pow 12)).Execute()
+
+      Thread.sleep(3)
+
+      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
+
+      Thread.sleep(3)
 
       MakeReadOutputCommand(256 * 4).Execute()
 
@@ -75,8 +84,8 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   def RunDacSweepTest2(filename: String) = {
 
     val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80, i + (2 pow 14) + (2 pow 12)).Execute()
-      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + (2 pow 14) + (2 pow 12)).Execute()
+      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
+      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + 0x5000).Execute()
       MakeReadOutputCommand(256 * 4).Execute()
 
       RunDacSweepTest
@@ -327,7 +336,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   def MakeRoicResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (!reset) ChipReset else 0, ChipReset),
+      MakeResetCommand(if (!reset) 0xf else 0, 0xf),
       MakeUpdateWireInsCommand()
     ))
   }

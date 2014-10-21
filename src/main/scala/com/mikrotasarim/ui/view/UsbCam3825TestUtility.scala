@@ -77,7 +77,12 @@ object UsbCam3825TestUtility extends JFXApp {
                     MtAs1410x2MemoryMapStage.show()
                   }
                 },
-                createReadOutputControl
+                createReadOutputControl,
+                new Button("Probe Test") {
+                  onAction = () => {
+                    MtAs1410x2ProbeTestStage.show()
+                  }
+                }
               )
             }
             center = new TabPane {

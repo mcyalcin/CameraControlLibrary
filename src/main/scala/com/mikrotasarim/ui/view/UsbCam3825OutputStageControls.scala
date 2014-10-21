@@ -59,6 +59,9 @@ object UsbCam3825OutputStageControls {
                   createPadControls(outputStage.pads(6)),
                   createPadControls(outputStage.pads(7))
                 )
+              },
+              new Button("Turn On LVDS") {
+                onAction = handle { outputStage.TurnOnLvds() }
               }
             )
           },
@@ -205,7 +208,7 @@ object UsbCam3825OutputStageControls {
       )
     }
     val terminationResolutionChoiceBox = new ChoiceBox(pad.terminationResolutionLabels) {
-      value <==> pad.selectedTerminationResolution
+      value <==> pad.selectedLvdsCurrent
     }
 
     new VBox {

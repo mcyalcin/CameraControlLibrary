@@ -75,7 +75,19 @@ object UsbCam3825FpgaControls {
     new HBox {
       disable <== !bitfileDeployed
       spacing = 10
-      content = createLabeledBooleanDropdown("Dval/Fval", embeddedAsicLabels, embeddedDvalFval)
+      content = List(
+        createLabeledBooleanDropdown("Dval/Fval", embeddedAsicLabels, embeddedDvalFval),
+        new VBox {
+          prefWidth = 80
+          spacing = 5
+          content = List(
+            new Label("Clock Speed Factor"),
+            new ChoiceBox(speedFactors) {
+              value <==> selectedSpeedFactor
+            }
+          )
+        }
+      )
     }
   }
 

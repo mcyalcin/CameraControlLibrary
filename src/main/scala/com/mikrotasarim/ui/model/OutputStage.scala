@@ -13,7 +13,7 @@ abstract class Pad {
   val singleDifferentialLabels: ObservableBuffer[String]
   val singleSelected: BooleanProperty
   val terminationResolutionLabels: ObservableBuffer[String]
-  val selectedTerminationResolution: StringProperty
+  val selectedLvdsCurrent: StringProperty
   val label: String
   val changed: BooleanProperty
   val power: IntegerProperty
@@ -75,6 +75,16 @@ class BiasCurrent(override val address: Int, val initValue: Int, val maxValue: D
 }
 
 class OutputStage {
+  def TurnOnLvds(): Unit = {
+    for (pad <- pads) {
+      pad.enableTermination.value = true
+      pad.powerDown.value = false
+      pad.selectedLvdsCurrent.value = "7.0 mA"
+      pad.Commit()
+    }
+    delayWord.clkOutDlySel.value = 3
+    delayWord.CommitCod()
+  }
 
   class PadImpl(val label: String) extends Pad {
 
@@ -111,8 +121,8 @@ class OutputStage {
 
     val terminationResolutionLabels = ObservableBuffer("3.5 mA", "7.0 mA")
     val highTerminationResolution = BooleanProperty(value = false)
-    val selectedTerminationResolution = StringProperty("3.5 mA")
-    selectedTerminationResolution.onChange(highTerminationResolution.value = selectedTerminationResolution.value == "7.0 mA")
+    val selectedLvdsCurrent = StringProperty("3.5 mA")
+    selectedLvdsCurrent.onChange(highTerminationResolution.value = selectedLvdsCurrent.value == "7.0 mA")
     highTerminationResolution.onChange(UpdateChanged())
     var committedHighResolution = false
 
@@ -143,7 +153,7 @@ class OutputStage {
       power.value = 3
       singleSelected.value = false
       powerDown.value = false
-      selectedTerminationResolution.value = "3.5 mA"
+      selectedLvdsCurrent.value = "3.5 mA"
       Commit()
     }
   }
