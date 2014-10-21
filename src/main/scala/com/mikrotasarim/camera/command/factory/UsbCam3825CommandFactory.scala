@@ -320,7 +320,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   def MakeFpgaResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
-      MakeResetCommand(if (!reset) FpgaReset else 0, FpgaReset),
+      MakeResetCommand(if (!reset) 0xf else 0, 0xf),
       MakeUpdateWireInsCommand()
     ))
   }
