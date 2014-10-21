@@ -4,6 +4,7 @@ import java.io.{File, FileWriter}
 
 import com.mikrotasarim.camera.command._
 import com.mikrotasarim.camera.device._
+import scala.language.reflectiveCalls
 
 import scala.collection.immutable.IndexedSeq
 
@@ -156,7 +157,6 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   def MakeReadOutputChunkCommand(): Command = {
     val buf0 = Array.ofDim[Byte](1024)
-    buf0(0) = 1
     val buf1 = Array.ofDim[Byte](1024)
     val buf2 = Array.ofDim[Byte](1024)
     val buf3 = Array.ofDim[Byte](1024)
@@ -321,7 +321,14 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     buf
   }
 
-  def MakeReadFromRoicNucMemoryCommand() = ???
+  def ReadFromRoicNucMemory(): Array[Byte] = {
+    MakeSetWireInValueCommand(AsicCommandWire, ReadFromRoicNucMemoryCommand).Execute()
+    MakeUpdateWireInsCommand().Execute()
+    MakeActivateTriggerInCommand(TriggerWire, 0).Execute()
+    val buf = new Array[Byte](388)
+    device.ReadFromPipeOut(ReadPipe, 388, buf)
+    buf
+  }
 
   def MakeDisconnectCommand(): Command = {
     new SimpleCommand(() => device.Disconnect())

@@ -14,3 +14,5 @@ libraryDependencies ++= Seq(
 )
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+
+scalacOptions ++= Seq("-feature")
