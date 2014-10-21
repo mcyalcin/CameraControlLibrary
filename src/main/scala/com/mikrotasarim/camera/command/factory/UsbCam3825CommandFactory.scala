@@ -122,17 +122,17 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     for (i <- 0 until length by 4) {
       val words =
         List(bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
-        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
-        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
-        bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)))
+        bytesToWord(buf1(i), buf1(i + 1), if (sixteenBitMode) 0 else buf1(i + 2), if (sixteenBitMode) 0 else buf1(i + 3)),
+        bytesToWord(buf2(i), buf2(i + 1), if (sixteenBitMode) 0 else buf2(i + 2), if (sixteenBitMode) 0 else buf2(i + 3)),
+        bytesToWord(buf3(i), buf3(i + 1), if (sixteenBitMode) 0 else buf3(i + 2), if (sixteenBitMode) 0 else buf3(i + 3)))
 
       val strings =
         if (radix == 2)
-          words.map("0000000000000000" + _.toBinaryString takeRight (if (sixteenBitMode) 8 else 16))
+          words.map("00000000000000000000000000000000" + _.toBinaryString takeRight (if (sixteenBitMode) 16 else 32))
         else if (radix == 10)
-          words.map("00000" + _.toString takeRight (if (sixteenBitMode) 3 else 5))
+          words.map("0000000000" + _.toString takeRight (if (sixteenBitMode) 5 else 10))
         else
-          words.map("0000" + _.toHexString takeRight (if (sixteenBitMode) 2 else 4))
+          words.map("00000000" + _.toHexString takeRight (if (sixteenBitMode) 4 else 8))
 
       stringBuilder.append(
         strings(0) + ", " +
