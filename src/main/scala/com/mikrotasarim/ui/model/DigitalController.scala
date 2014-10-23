@@ -150,7 +150,7 @@ class DigitalController {
   digTestSelection(1).onChange(CommitDigTest())
 
   def CommitDigTest() = {
-    val value = Integer.parseInt(digTestOptions(0)(digTestSelection(0).value), 2) + Integer.parseInt(digTestOptions(1)(digTestSelection(1).value), 2) * (2 pow 8)
+    val value = Integer.parseInt(digTestOptions(0)(digTestSelection(0).value), 2) * (2 pow 8) + Integer.parseInt(digTestOptions(1)(digTestSelection(1).value), 2)
     val word = new MemoryLocation {
       override def memoryValue: Long = value
 
