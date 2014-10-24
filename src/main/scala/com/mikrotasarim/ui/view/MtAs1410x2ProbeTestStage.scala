@@ -1,25 +1,154 @@
 package com.mikrotasarim.ui.view
 
-import com.mikrotasarim.ui.model.MtAs1410x2MemoryMap._
-import com.mikrotasarim.ui.view.MtAs1410x2MemoryMapStage._
+import com.mikrotasarim.ui.model.ProbeTestController
 
 import scalafx.Includes._
+import scalafx.beans.property.BooleanProperty
+import scalafx.collections.ObservableBuffer
+import scalafx.geometry.Insets
+import scalafx.scene.chart.{XYChart, LineChart, NumberAxis}
 import scalafx.scene.{Node, Scene}
-import scalafx.scene.control.{Button, TextField, Label, ScrollPane}
+import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
 import scalafx.stage.Stage
 
 object MtAs1410x2ProbeTestStage extends Stage {
 
-  width = 400
+  width = 1400
   height = 600
-  title = "MTAS1410X2 Memory Map"
+  title = "MTAS1410X2 Probe Test"
   scene = new Scene() {
     root = new ScrollPane {
-      content = new VBox {
-
+      content = new HBox {
+        padding = Insets(10)
+        spacing = 50
+        content = List(
+          createIdColumn(),
+          createTestColumn(),
+          createDacSweepCharts()
+        )
       }
     }
+  }
+
+  private def createDacSweepCharts(): Node = new VBox {
+    spacing = 10
+    content = List(
+      new HBox {
+        spacing = 10
+        content = List(
+          createDacSweepChart(0),
+          createDacSweepChart(1)
+        )
+      },
+      new HBox {
+        spacing = 10
+        content = List(
+          createDacSweepChart(2),
+          createDacSweepChart(3)
+        )
+      }
+    )
+  }
+
+  private def createIdColumn(): Node = new VBox {
+    spacing = 10
+    content = List(
+      createLabelControls(),
+      new Button("Run All Tests") {
+        onAction = handle { ProbeTestController.RunAllTests() }
+      },
+      new Button("Save Result and Proceed") {
+        onAction = handle { ProbeTestController.SaveAndProceed() }
+      },
+      new ChoiceBox(ProbeTestController.comPortList) {
+        value <==> ProbeTestController.selectedComPort
+      },
+      new HBox {
+        spacing = 10
+        content = List(
+          new Label("Output"),
+          new Button("On") {
+            onAction = handle { ProbeTestController.outputOn() }
+          },
+          new Button("Off") {
+            onAction = handle { ProbeTestController.outputOff() }
+          }
+        )
+      },
+      new HBox {
+        spacing = 10
+        content = List(
+          new Label("Mode"),
+          new Button("Local") {
+            onAction = handle { ProbeTestController.setLocal() }
+          },
+          new Button("Remote") {
+            onAction = handle { ProbeTestController.setRemote() }
+          }
+        )
+      }
+    )
+  }
+
+  private def createTestColumn(): Node = new VBox {
+    spacing = 10
+    content = for (i <- 1 to 13) yield createTestControl(i)
+  }
+
+  private def createTestControl(i: Int): Node = new HBox {
+    spacing = 10
+    content = List(
+      new Label(ProbeTestController.labels(i)) {
+        prefWidth = 220
+      },
+      passFailControl(ProbeTestController.pass(i), ProbeTestController.fail(i)),
+      new Button("Run") {
+        onAction = handle { ProbeTestController.RunTest(i) }
+      }
+    )
+  }
+
+  private def passFailControl(pass: BooleanProperty, fail: BooleanProperty): Node = {
+    val tog = new ToggleGroup()
+
+    new HBox {
+      spacing = 10
+      prefWidth = 120
+      content = List(
+        new RadioButton("Pass") {
+          toggleGroup = tog
+          selected <==> pass
+        },
+        new RadioButton("Fail") {
+          toggleGroup = tog
+          selected <==> fail
+        }
+      )
+    }
+  }
+
+  private def createDacSweepChart(i: Int): Node = {
+    val xAxis = new NumberAxis
+    xAxis.label = "Memory Value"
+    xAxis.forceZeroInRange = false
+    val yAxis = new NumberAxis
+
+    val lineChart = LineChart(xAxis, yAxis)
+    lineChart.title = "DAC Sweep Result " + i
+    lineChart.setPrefWidth(300)
+    lineChart.setPrefHeight(250)
+
+    val data =
+      ObservableBuffer(
+        (for (i <- 0x378 until 0xe24 by 10) yield (i, math.log10(i)))
+          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+
+    val series = XYChart.Series[Number, Number]("Value read", data)
+    lineChart.getData.add(series)
+    lineChart.createSymbols = false
+
+    lineChart
   }
 
   private def createLabelControls(): Node = {
@@ -36,20 +165,25 @@ object MtAs1410x2ProbeTestStage extends Stage {
   private def createPathControl = new HBox {
     spacing = 10
     content = List(
-      new Label("Output path"),
+      new Label("Output path") {
+        prefWidth = 85
+      },
       new TextField {
-
+        prefWidth = 150
+        text <==> ProbeTestController.outputPath
       }
     )
   }
 
-
   private def createWaferControl = new HBox {
     spacing = 10
     content = List(
-      new Label("Wafer #"),
+      new Label("Wafer Id") {
+        prefWidth = 85
+      },
       new TextField {
-
+        prefWidth = 150
+        text <==> ProbeTestController.waferId
       }
     )
   }
@@ -57,11 +191,16 @@ object MtAs1410x2ProbeTestStage extends Stage {
   private def createDieControl = new HBox {
     spacing = 10
     content = List(
-      new Label("Die #"),
-      new TextField {
-
+      new Label("Die #") {
+        prefWidth = 85
       },
-      new Button("Next")
+      new TextField {
+        prefWidth = 150
+        text.onChange({
+          text.value = text.value.replaceAll("[^0-9]", "")
+        })
+        text <==> ProbeTestController.dieNumber
+      }
     )
   }
 }

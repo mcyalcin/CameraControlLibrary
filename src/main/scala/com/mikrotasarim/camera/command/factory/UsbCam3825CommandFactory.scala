@@ -50,11 +50,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
     val stats = for (i <- 0x378 until 0xe24) yield {
 
-      Thread.sleep(3)
-
       MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
-
-      Thread.sleep(3)
 
       MakeReadOutputCommand(256 * 4).Execute()
 
@@ -102,6 +98,11 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     using(new FileWriter(file, appending))(_.write(data))
 
   def MakeReadOutputCommand(length: Int): Command = new CompositeCommand(List(
+    MakeEnableTestFeedCommand(enable = false),
+    MakeEnableTestFeedCommand(enable = true)
+  ))
+
+  def MakeReadOutputCommand(): Command = new CompositeCommand(List(
     MakeEnableTestFeedCommand(enable = false),
     MakeEnableTestFeedCommand(enable = true)
   ))
@@ -261,6 +262,24 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     )
   }
 
+  def ReadFromAsicMemory(address: Int): Long = {
+    new CompositeCommand(
+      GenerateReadWireOutCommands(address, ReadFromAsicMemoryTopCommand) ++
+        GenerateCommitWireInCommands
+    ).Execute()
+    device.UpdateWireOuts()
+    device.GetWireOutValue(ReadWire)
+  }
+
+  def ReadFromAsicMemoryBot(address: Int): Long = {
+    new CompositeCommand(
+      GenerateReadWireOutCommands(address, ReadFromAsicMemoryBotCommand) ++
+        GenerateCommitWireInCommands
+    ).Execute()
+    device.UpdateWireOuts()
+    device.GetWireOutValue(ReadWire)
+  }
+
   def MakeReadFromAsicMemoryBottomCommand(address: Int, callback: (Long) => Unit): Command = {
     new CompositeCommand(
       GenerateReadWireOutCommands(address, ReadFromAsicMemoryBotCommand) ++
@@ -341,7 +360,7 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     ))
   }
 
-  def MakeRoicResetCommand(reset: Boolean): Command = {
+  def MakeChipResetCommand(reset: Boolean): Command = {
     new CompositeCommand(List(
       MakeResetCommand(if (!reset) 0xf else 0, 0xf),
       MakeUpdateWireInsCommand()

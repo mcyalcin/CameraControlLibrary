@@ -24,7 +24,13 @@ object UsbCam3825TestUtility extends JFXApp {
     title = "Mikro-Tasarım UsbCam3825 Test Utility"
   }
 
-  Reset()
+  stage.scene = new Scene {
+    root = new BorderPane {
+      center = createTabs
+    }
+  }
+
+  stage.setMaximized(true)
 
   private def createReadOutputControl: Node = new VBox {
     spacing = 10

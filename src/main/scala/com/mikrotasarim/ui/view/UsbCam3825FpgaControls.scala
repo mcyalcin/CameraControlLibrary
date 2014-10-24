@@ -26,6 +26,7 @@ object UsbCam3825FpgaControls {
             tooltip = "On test mode, software works with a mock device interface instead of an actual device"
           },
           createSelectBitfileHBox,
+          createSelectAlternateBitfileHBox,
           createResetControls,
           createFvalDvalSelector,
           createChannelControls,
@@ -120,6 +121,25 @@ object UsbCam3825FpgaControls {
     }
   }
 
+  private def createSelectAlternateBitfileHBox: HBox = {
+    new HBox {
+      spacing = 10
+      content = List(
+        createSelectAlternateBitfileButton,
+        createAlternateTextField
+      )
+    }
+  }
+
+  private def createAlternateTextField: TextField = {
+    new TextField {
+      prefColumnCount = 40
+      promptText = "Enter bitfile path"
+      text <==> alternateBitfilePath
+      disable <== bitfileDeployed
+    }
+  }
+
   private def createTextField: TextField = {
     new TextField {
       prefColumnCount = 40
@@ -169,6 +189,24 @@ object UsbCam3825FpgaControls {
 
         if (bitfile != null) {
           bitfilePath.value = bitfile.getAbsolutePath
+        }
+      }
+    }
+  }
+
+  private def createSelectAlternateBitfileButton: Button = {
+    new Button("Select Atfile") {
+      id = "selectBitfileButton"
+      disable <== bitfileDeployed
+      onAction = handle {
+        val fileChooser = new FileChooser() {
+          title = "Pick an FPGA Bitfile"
+        }
+
+        val alternateBitfile = fileChooser.showOpenDialog(stage)
+
+        if (alternateBitfile != null) {
+          alternateBitfilePath.value = alternateBitfile.getAbsolutePath
         }
       }
     }

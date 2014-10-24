@@ -39,6 +39,7 @@ object DeviceInterfaceModel {
   }
 
   val bitfilePath: StringProperty = new StringProperty()
+  val alternateBitfilePath: StringProperty = new StringProperty()
   val bitfileDeployed: BooleanProperty = BooleanProperty(value = false)
 
   val testMode: BooleanProperty = new BooleanProperty() {
@@ -134,7 +135,7 @@ object DeviceInterfaceModel {
     val chipReset = new BooleanProperty() {
       value = true
       onChange({
-        commandFactory.MakeRoicResetCommand(this.value).Execute()
+        commandFactory.MakeChipResetCommand(this.value).Execute()
         RestoreDefaults()
       })
     }
