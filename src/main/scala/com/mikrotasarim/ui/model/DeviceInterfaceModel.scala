@@ -26,6 +26,7 @@ object DeviceInterfaceModel {
     val device = new OpalKellyInterface(bitfilePath.value)
     commandFactory = new UsbCam3825CommandFactory(device)
     InitializeFpga()
+    for (i <- 0 to 3) ChannelControls.channelEnabled(i).value = true
     DeviceInterfaceModel.bitfileDeployed.value = true
   }
 

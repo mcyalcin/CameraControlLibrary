@@ -10,11 +10,11 @@ import scalafx.scene.chart.{XYChart, LineChart, NumberAxis}
 import scalafx.scene.{Node, Scene}
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
-import scalafx.stage.Stage
+import scalafx.stage.{FileChooser, Stage}
 
 object MtAs1410x2ProbeTestStage extends Stage {
 
-  width = 1400
+  width = 800
   height = 600
   title = "MTAS1410X2 Probe Test"
   scene = new Scene() {
@@ -24,42 +24,46 @@ object MtAs1410x2ProbeTestStage extends Stage {
         spacing = 50
         content = List(
           createIdColumn(),
-          createTestColumn(),
-          createDacSweepCharts()
+          createTestColumn()//,
+//          createDacSweepCharts()
         )
       }
     }
   }
 
-  private def createDacSweepCharts(): Node = new VBox {
-    spacing = 10
-    content = List(
-      new HBox {
-        spacing = 10
-        content = List(
-          createDacSweepChart(0),
-          createDacSweepChart(1)
-        )
-      },
-      new HBox {
-        spacing = 10
-        content = List(
-          createDacSweepChart(2),
-          createDacSweepChart(3)
-        )
-      }
-    )
-  }
+//  private def createDacSweepCharts(): Node = new VBox {
+//    spacing = 10
+//    content = List(
+//      new HBox {
+//        spacing = 10
+//        content = List(
+//          createDacSweepChart(0),
+//          createDacSweepChart(1)
+//        )
+//      },
+//      new HBox {
+//        spacing = 10
+//        content = List(
+//          createDacSweepChart(2),
+//          createDacSweepChart(3)
+//        )
+//      }
+//    )
+//  }
 
   private def createIdColumn(): Node = new VBox {
     spacing = 10
     content = List(
       createLabelControls(),
       new Button("Run All Tests") {
-        onAction = handle { ProbeTestController.RunAllTests() }
+        onAction = handle {
+          ProbeTestController.RunAllTests()
+        }
       },
       new Button("Save Result and Proceed") {
-        onAction = handle { ProbeTestController.SaveAndProceed() }
+        onAction = handle {
+          ProbeTestController.SaveAndProceed()
+        }
       },
       new ChoiceBox(ProbeTestController.comPortList) {
         value <==> ProbeTestController.selectedComPort
@@ -69,10 +73,14 @@ object MtAs1410x2ProbeTestStage extends Stage {
         content = List(
           new Label("Output"),
           new Button("On") {
-            onAction = handle { ProbeTestController.outputOn() }
+            onAction = handle {
+              ProbeTestController.outputOn()
+            }
           },
           new Button("Off") {
-            onAction = handle { ProbeTestController.outputOff() }
+            onAction = handle {
+              ProbeTestController.outputOff()
+            }
           }
         )
       },
@@ -81,14 +89,35 @@ object MtAs1410x2ProbeTestStage extends Stage {
         content = List(
           new Label("Mode"),
           new Button("Local") {
-            onAction = handle { ProbeTestController.setLocal() }
+            onAction = handle {
+              ProbeTestController.setLocal()
+            }
           },
           new Button("Remote") {
-            onAction = handle { ProbeTestController.setRemote() }
+            onAction = handle {
+              ProbeTestController.setRemote()
+            }
           }
         )
-      }
+      },
+      createSweepReferenceControl()
     )
+  }
+
+  private def createSweepReferenceControl(): Node = {
+    new Button("Select Sweep Reference File") {
+      onAction = handle {
+        val fileChooser = new FileChooser() {
+          title = "Pick a sweep reference file"
+        }
+
+        val filePath = fileChooser.showOpenDialog(MtAs1410x2ProbeTestStage)
+
+        if (filePath != null) {
+          ProbeTestController.sweepReferenceFilePath.value = filePath.getAbsolutePath
+        }
+      }
+    }
   }
 
   private def createTestColumn(): Node = new VBox {
@@ -104,7 +133,9 @@ object MtAs1410x2ProbeTestStage extends Stage {
       },
       passFailControl(ProbeTestController.pass(i), ProbeTestController.fail(i)),
       new Button("Run") {
-        onAction = handle { ProbeTestController.RunTest(i) }
+        onAction = handle {
+          ProbeTestController.RunTest(i)
+        }
       }
     )
   }
@@ -128,28 +159,37 @@ object MtAs1410x2ProbeTestStage extends Stage {
     }
   }
 
-  private def createDacSweepChart(i: Int): Node = {
-    val xAxis = new NumberAxis
-    xAxis.label = "Memory Value"
-    xAxis.forceZeroInRange = false
-    val yAxis = new NumberAxis
-
-    val lineChart = LineChart(xAxis, yAxis)
-    lineChart.title = "DAC Sweep Result " + i
-    lineChart.setPrefWidth(300)
-    lineChart.setPrefHeight(250)
-
-    val data =
-      ObservableBuffer(
-        (for (i <- 0x378 until 0xe24 by 10) yield (i, math.log10(i)))
-          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-
-    val series = XYChart.Series[Number, Number]("Value read", data)
-    lineChart.getData.add(series)
-    lineChart.createSymbols = false
-
-    lineChart
-  }
+//  private def createDacSweepChart(i: Int): Node = {
+//    val xAxis = new NumberAxis
+//    xAxis.label = "Memory Value"
+//    xAxis.forceZeroInRange = false
+//    val yAxis = new NumberAxis
+//
+//    val lineChart = LineChart(xAxis, yAxis)
+//    lineChart.title = "DAC Sweep Result " + i
+//    lineChart.setPrefWidth(300)
+//    lineChart.setPrefHeight(250)
+//
+//    val data =
+//      ObservableBuffer(
+//        (for (i <- 0x378 until 0xe24 by 10) yield (i, math.log10(i)))
+//          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+//
+//    ProbeTestController.chartData(i).onChange(
+//      {
+//        val data =
+//          ObservableBuffer(
+//            (for (j <- 0x378 until 0xe24 by 10) yield (j, ProbeTestController.chartData(i)(j)))
+//              map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+//      }
+//    )
+//
+//    val series = XYChart.Series[Number, Number]("Value read", data)
+//    lineChart.getData.add(series)
+//    lineChart.createSymbols = false
+//
+//    lineChart
+//  }
 
   private def createLabelControls(): Node = {
     new VBox {

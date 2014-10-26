@@ -1,14 +1,15 @@
 package com.mikrotasarim.ui.model
 
 import java.io.{FileWriter, File}
+import java.text.SimpleDateFormat
+import scalax.file.Path
 
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.OpalKellyInterface
 import jssc.{SerialPortList, SerialPort}
 
-import scalafx.Includes._
+import scala.io.Source
 import scala.collection.immutable.IndexedSeq
-import scala.collection.immutable.Range.Inclusive
 import scala.collection.mutable
 import scalafx.beans.property.{BooleanProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
@@ -81,19 +82,52 @@ object ProbeTestController {
 
   def RunAllTests(): Unit = {
     outputOn()
-    Thread.sleep(1000)
+    Thread.sleep(3000)
+    DeployBitfile()
+    Thread.sleep(100)
     for (i <- 1 to 13) RunTest(i)
   }
 
+  def using[A <: {def close() : Unit}, B](resource: A)(f: A => B): B =
+    try f(resource) finally resource.close()
+
+  def writeStringToFile(file: File, data: String, appending: Boolean = false) =
+    using(new FileWriter(file, appending))(_.write(data))
+
   def SaveAndProceed(): Unit = {
 
-    def using[A <: {def close() : Unit}, B](resource: A)(f: A => B): B =
-      try f(resource) finally resource.close()
+    val folder = outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value
 
-    def writeStringToFile(file: File, data: String, appending: Boolean = false) =
-      using(new FileWriter(file, appending))(_.write(data))
+    val folderPath: Path = Path.fromString(folder)
 
-    //writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/testResult.txt"), "dummy")
+    if (!folderPath.exists) folderPath.createDirectory()
+
+    val output = new mutable.StringBuilder()
+
+    output ++= "Project Name: MTAS1410X2\n"
+    output ++= "Wafer ID: " + waferId.value + "\n"
+    output ++= "Die #: " + dieNumber.value + "\n"
+    val format = new SimpleDateFormat("HH:mm dd/MM/yyyy")
+    output ++= "Date: " + format.format(new java.util.Date()) + "\n"
+    var pas = true
+
+    for (i <- 1 to 13) {
+      if (!pass(i).value) pas = false
+    }
+
+    output ++= "Status: "
+
+    if (pas) output ++= "Pass\n\n" else output ++= "Fail\n\n"
+
+    if (!pas) {
+      output ++= "Results: \n"
+      for (i <- 1 to 13) {
+        output ++= "Test " + i + ": "
+        if (!pass(i).value) output ++= "Fail\n" else output ++= "Pass\n"
+      }
+    }
+
+    writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/dieSummary.txt"), output.toString())
 
     for (i <- 1 to 13) {
       pass(i).value = false; fail(i).value = false
@@ -185,9 +219,21 @@ object ProbeTestController {
   class MemoryTestResult(val pass: Boolean, val errorCount: Int, val errors: List[(Int, Int)])
 
   def Reset(): Unit = {
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = true).Execute()
+    Thread.sleep(2)
+    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = false).Execute()
+    Thread.sleep(2)
+    for (i <- 0 to 3) DeviceInterfaceModel.ChannelControls.channelEnabled(i).value = false
+    Thread.sleep(1)
+    for (i <- 0 to 3) DeviceInterfaceModel.ChannelControls.channelEnabled(i).value = true
+    Thread.sleep(5)
+  }
+
+  def Resett(): Unit = {
     DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = true).Execute()
     DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = false).Execute()
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    Thread.sleep(5)
   }
 
   def RunAsicMemoryDefaultValueTest(): MemoryTestResult = {
@@ -206,45 +252,75 @@ object ProbeTestController {
     new MemoryTestResult(errors.isEmpty, errors.toList.length, errors.toList)
   }
 
+  private def PrintToFile(output: String, filename: String): Unit = {
+    val folder = outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value
+    val folderPath: Path = Path.fromString(folder)
+    if (!folderPath.exists) folderPath.createDirectory()
+    writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/" + filename), output)
+  }
+
   def RunAsicMemoryToggleTest(): MemoryTestResult = {
 
     Reset()
 
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(4)
+
     val errors: mutable.SortedSet[(Int, Int)] = mutable.SortedSet()
 
-    FillMemWithOnes()
     FillMemWithZeroes()
+
     for (i <- topMemoryIndexes) {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0xffff).Execute()
       val word = ("0000000000000000" + commandFactory.ReadFromAsicMemory(i).toBinaryString).takeRight(16)
       for (j <- 0 to 15)
-        if (word(j) != '0')
+        if (word(j) != '1') {
           errors += Tuple2(i, j)
+          println(i + " " + j + " toggle to one failed")
+        }
+    }
+
+    for (i <- topMemoryIndexes) {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0).Execute()
+      val word = ("0000000000000000" + commandFactory.ReadFromAsicMemory(i).toBinaryString).takeRight(16)
+      for (j <- 0 to 15)
+        if (word(j) != '0') {
+          errors += Tuple2(i, j)
+          println(i + " " + j + " toggle to zero failed")
+        }
     }
 
     for (i <- botMemoryIndexes) {
+      commandFactory.MakeWriteToAsicMemoryBotCommand(i, 0xffff).Execute()
       val word = ("0000000000000000" + commandFactory.ReadFromAsicMemoryBot(i).toBinaryString).takeRight(16)
       for (j <- 0 to 15)
-        if (word(j) != '0')
+        if (word(j) != '1') {
           errors += Tuple2(256 + i, j)
-    }
-
-    FillMemWithOnes()
-
-    for (i <- topMemoryIndexes) {
-      val word = ("0000000000000000" + commandFactory.ReadFromAsicMemory(i).toBinaryString).takeRight(16)
-      for (j <- 0 to 15)
-        if (word(j) != '1')
-          errors += Tuple2(i, j)
+          println((256 + i) + " " + j + " toggle to one failed")
+        }
     }
 
     for (i <- botMemoryIndexes) {
+      commandFactory.MakeWriteToAsicMemoryBotCommand(i, 0).Execute()
       val word = ("0000000000000000" + commandFactory.ReadFromAsicMemoryBot(i).toBinaryString).takeRight(16)
       for (j <- 0 to 15)
-        if (word(j) != '1')
+        if (word(j) != '0') {
           errors += Tuple2(256 + i, j)
+          println((256 + i) + " " + j + " toggle to zero failed")
+        }
     }
 
-    if (errors.isEmpty) pass(3).value = true else fail(3).value = true
+    if (errors.isEmpty) pass(3).value = true
+    else {
+      fail(3).value = true
+
+      val output = new mutable.StringBuilder()
+
+      for (error <- errors) {
+        output ++= error.toString() + "\n"
+      }
+
+      PrintToFile(output.toString(), "results_memoryErrors.txt")
+    }
 
     new MemoryTestResult(errors.isEmpty, errors.toList.length, errors.toList)
   }
@@ -252,23 +328,16 @@ object ProbeTestController {
   val volatileAddresses = Set(93)
 
   var topMemoryIndexes: IndexedSeq[Int] = (0 to 255).filter(!volatileAddresses.contains(_))
-  val botMemoryIndexes: Inclusive = 0 to 127
-
-  def FillMemWithOnes(): Unit = {
-    for (i <- topMemoryIndexes) {
-      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0xffff).Execute()
-    }
-    for (i <- botMemoryIndexes) {
-      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0xffff).Execute()
-    }
-  }
+  val botMemoryIndexes: IndexedSeq[Int] = 0 to 127
 
   def FillMemWithZeroes(): Unit = {
     for (i <- topMemoryIndexes) {
-      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0).Execute()
+      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0xffff).Execute()
+      Thread.sleep(1)
     }
     for (i <- botMemoryIndexes) {
-      commandFactory.MakeWriteToAsicMemoryTopCommand(i, 0).Execute()
+      commandFactory.MakeWriteToAsicMemoryBotCommand(i, 0xffff).Execute()
+      Thread.sleep(1)
     }
   }
 
@@ -293,20 +362,20 @@ object ProbeTestController {
                                     ) {
 
     def pass: Boolean = {
-      within(resetCurrent, 200, 10) &&
-        within(runningCurrent, 224, 10) &&
-        within(oneChannelCurrent, 271, 10) &&
-        within(twoChannelCurrent, 310, 10) &&
-        within(fourChannelCurrent, 380, 10) &&
-        within(noLvdsCurrent, 351, 10) &&
-        within(lvds0Current, 357, 10) &&
-        within(lvds1Current, 362, 10) &&
-        within(lvds2Current, 362, 10) &&
-        within(lvds3Current, 365, 10) &&
-        within(lvds4Current, 367, 10) &&
-        within(lvds5Current, 371, 10) &&
-        within(lvds6Current, 375, 10) &&
-        within(lvds7Current, 380, 10)
+      within(resetCurrent, 0.200, 0.010) &&
+        within(runningCurrent, 0.214, 0.010) &&
+        within(oneChannelCurrent, 0.260, 0.010) &&
+        within(twoChannelCurrent, 0.294, 0.010) &&
+        within(fourChannelCurrent, 0.355, 0.010) &&
+        within(noLvdsCurrent, 0.320, 0.010) &&
+        within(lvds0Current, 0.326, 0.010) &&
+        within(lvds1Current, 0.332, 0.010) &&
+        within(lvds2Current, 0.334, 0.010) &&
+        within(lvds3Current, 0.337, 0.010) &&
+        within(lvds4Current, 0.342, 0.010) &&
+        within(lvds5Current, 0.346, 0.010) &&
+        within(lvds6Current, 0.350, 0.010) &&
+        within(lvds7Current, 0.355, 0.010)
     }
   }
 
@@ -413,35 +482,60 @@ object ProbeTestController {
 
     if (res.pass) pass(4).value = true else fail(4).value = true
 
+    val folder = outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value
+    val folderPath: Path = Path.fromString(folder)
+    if (!folderPath.exists) folderPath.createDirectory()
+
+    val output = new mutable.StringBuilder()
+
+    output ++= "Reset Current: " + resetCurrent * 1000 + "mA\n"
+    output ++= "Running Current: " + runningCurrent * 1000 + "mA\n"
+    output ++= "One Channel Current: " + oneChannelCurrent * 1000 + "mA\n"
+    output ++= "Two Channel Current: " + twoChannelCurrent * 1000 + "mA\n"
+    output ++= "Four Channel Current: " + fourChannelCurrent * 1000 + "mA\n"
+    output ++= "Output Ports Off: " + noLvdsCurrent * 1000 + "mA\n"
+    output ++= "1 Output Port On: " + lvds0Current * 1000 + "mA\n"
+    output ++= "2 Output Ports On: " + lvds1Current * 1000 + "mA\n"
+    output ++= "3 Output Ports On: " + lvds2Current * 1000 + "mA\n"
+    output ++= "4 Output Ports On: " + lvds3Current * 1000 + "mA\n"
+    output ++= "5 Output Ports On: " + lvds4Current * 1000 + "mA\n"
+    output ++= "6 Output Ports On: " + lvds5Current * 1000 + "mA\n"
+    output ++= "7 Output Ports On: " + lvds6Current * 1000 + "mA\n"
+    output ++= "8 Output Ports On: " + lvds7Current * 1000 + "mA\n"
+
+    writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/results_powerTest.txt"), output.toString())
+
     res
   }
 
   def RunFlashInterfaceTest(): Boolean = {
 
-    Reset()
-
     commandFactory.ChangeSpeedFactor(1)
+
+    Resett()
 
     RunFlashSectorErase()
 
     Thread.sleep(1000)
 
-    val output1 = commandFactory.ReadFromFlashMemory(dieNumber.value.toInt, 256)
+    val output1 = commandFactory.ReadFromFlashMemory(0, 256)
 
     val testData = new Array[Byte](256)
 
     for (i <- 0 to 255) testData(i) = i.toByte
 
-    commandFactory.MakeWriteToFlashMemoryCommand(dieNumber.value.toInt, testData).Execute()
+    commandFactory.MakeWriteToFlashMemoryCommand(0, testData).Execute()
 
-    val output = commandFactory.ReadFromFlashMemory(dieNumber.value.toInt, 256)
+    val output = commandFactory.ReadFromFlashMemory(0, 256)
 
-    for (i <- 0 to 255) if (output1(i) != 255) {
+    for (i <- 0 to 255) if ((output1(i) + 256) % 256 != 255) {
+      println("Failed index: " + i)
       fail(5).value = true
       return false
     }
 
-    for (i <- 0 to 255) if (output(i) != testData(i)) {
+    for (i <- 0 to 255) if ((output(i) + 256) % 256 != (testData(i) + 256) % 256) {
+      println("Failed index: " + i)
       fail(5).value = true
       return false
     }
@@ -468,11 +562,13 @@ object ProbeTestController {
     commandFactory.MakeWriteToRoicMemoryCommand(15, 0xaaaa).Execute()
     commandFactory.MakeReadFromRoicMemoryCommand(15, o => if (o != 0xaaaa) pas = false).Execute()
 
-    DisconnectFromDevice()
-    Thread.sleep(100)
-    DeployBitfile()
+    //    DisconnectFromDevice()
 
-    if (pas) pass(12).value = true else fail(12).value = true
+    DeployBitfile()
+    Thread.sleep(100)
+    Reset()
+
+    if (pas) pass(13).value = true else fail(13).value = true
 
     pas
   }
@@ -487,6 +583,7 @@ object ProbeTestController {
     val device = new OpalKellyInterface(DeviceInterfaceModel.bitfilePath.value)
     DeviceInterfaceModel.commandFactory = new UsbCam3825CommandFactory(device)
     DeviceInterfaceModel.bitfileDeployed.value = true
+    for (i <- 0 to 3) DeviceInterfaceModel.ChannelControls.channelEnabled(i).value = true
   }
 
   def DisconnectFromDevice() {
@@ -520,8 +617,7 @@ object ProbeTestController {
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(40, 0x0005).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(4, 0x0200).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0002).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(19, 0x000e).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(21, 0x003c).Execute()
@@ -566,25 +662,25 @@ object ProbeTestController {
       values1(0) == 0x145c && values1(2) == 0x2834 &&
         values1(1) == 0x145c && values1(3) == 0x2834
       )) result = false
-    if (!(within(values2(0), 1432, 300) &&
-      within(values2(1), 14952, 300) &&
-      within(values2(2), 11571, 300) &&
-      within(values2(3), 4812, 300))) result = false
+    if (!(within(values2(0), 1432, 700) &&
+      within(values2(1), 14952, 700) &&
+      within(values2(2), 11571, 700) &&
+      within(values2(3), 4812, 700))) result = false
 
-    if (!(within(values3(1), 1432, 300) &&
-      within(values3(2), 14952, 300) &&
-      within(values3(3), 11571, 300) &&
-      within(values3(0), 4812, 300))) result = false
+    if (!(within(values3(1), 1432, 700) &&
+      within(values3(2), 14952, 700) &&
+      within(values3(3), 11571, 700) &&
+      within(values3(0), 4812, 700))) result = false
 
-    if (!(within(values4(2), 1432, 300) &&
-      within(values4(3), 14952, 300) &&
-      within(values4(0), 11571, 300) &&
-      within(values4(1), 4812, 300))) result = false
+    if (!(within(values4(2), 1432, 700) &&
+      within(values4(3), 14952, 700) &&
+      within(values4(0), 11571, 700) &&
+      within(values4(1), 4812, 700))) result = false
 
-    if (!(within(values5(3), 1432, 300) &&
-      within(values5(0), 14952, 300) &&
-      within(values5(1), 11571, 300) &&
-      within(values5(2), 4812, 300))) result = false
+    if (!(within(values5(3), 1432, 700) &&
+      within(values5(0), 14952, 700) &&
+      within(values5(1), 11571, 700) &&
+      within(values5(2), 4812, 700))) result = false
 
     if (result) pass(6).value = true else fail(6).value = true
 
@@ -594,10 +690,13 @@ object ProbeTestController {
   def InitializeAdc(): Unit = {
     commandFactory.MakeWriteToAsicMemoryTopCommand(40, 0x0005).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(2, 0x0200).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0002).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(19, 0x000e).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(31, 0).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(32, 0).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x20e4).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0311).Execute()
   }
 
   def SetAdcBlock(baseIndex: Int, valueMap: Map[Int, Int]): Unit = {
@@ -605,7 +704,7 @@ object ProbeTestController {
       commandFactory.MakeWriteToAsicMemoryTopCommand(baseIndex + key, valueMap(key)).Execute()
   }
 
-  def  RunAdcFunctionalityTest(): Boolean = {
+  def RunAdcFunctionalityTest(): Boolean = {
 
     Reset()
     InitializeAdc()
@@ -822,7 +921,7 @@ object ProbeTestController {
 
   def adcOutput(i: Int): (Double, Double, Double, Double) = {
 
-    commandFactory.MakeWriteToAsicMemoryTopCommand(80, i).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
 
     Thread.sleep(10)
 
@@ -830,6 +929,13 @@ object ProbeTestController {
 
     (stats(0).mean, stats(1).mean, stats(2).mean, stats(3).mean)
   }
+
+  val sweepReferenceFilePath = StringProperty("")
+
+  //  val chartData = new Array[ObservableBuffer[I](3)
+  //  val chartData = new Array[ObservableBuffer[javafx.scene.chart.XYChart.Data[Number,Number]]](4)
+
+  val cd = ObservableBuffer[(Number, Number)]()
 
   def RunAdcLinearityTest() = {
 
@@ -849,16 +955,73 @@ object ProbeTestController {
     SetAdcBlock(21, map)
     SetAdcBlock(82, map)
 
-    val valueMap = (for (i <- 0x314 until 0xe88 by 10) yield i -> adcOutput(i)).toMap
+    val adc0 = new mutable.HashMap[Int, Double]
+    val adc1 = new mutable.HashMap[Int, Double]
+    val adc2 = new mutable.HashMap[Int, Double]
+    val adc3 = new mutable.HashMap[Int, Double]
+
+    val zambo = new mutable.StringBuilder()
+
+    for (i <- 0x314 until 0xe88 by 10) {
+      val output = adcOutput(i)
+      zambo ++= i + " -> " + output + "\n"
+      adc0 += i -> output._1
+      adc1 += i -> output._2
+      adc2 += i -> output._3
+      adc3 += i -> output._4
+    }
+
+    PrintToFile(zambo.toString(), "results_sweep.txt")
+
+    val adc0Map = adc0.toMap
+    val adc1Map = adc1.toMap
+    val adc2Map = adc2.toMap
+    val adc3Map = adc3.toMap
+
+    //    chartData(0) =   ObservableBuffer(
+    //        (for (i <- 0x378 until 0xe24 by 10) yield (i, adc0Map(i)))
+    //          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+    //
+    //    chartData(1)=   ObservableBuffer(
+    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc1Map(i)))
+    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+    //
+    //    chartData(2) =   ObservableBuffer(
+    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc2Map(i)))
+    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+    //
+    //    chartData(3) =   ObservableBuffer(
+    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc3Map(i)))
+    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
+
+    var k = 0x30a
+
+    val refs = (for (line <- Source.fromFile(sweepReferenceFilePath.value).getLines()) yield {
+      k = k + 10
+      k -> line.toDouble
+    }).toMap
 
     var adc0errors = 0
     var adc1errors = 0
     var adc2errors = 0
     var adc3errors = 0
 
+    for (k <- 0x314 until 0xe88 by 10) {
+      if (!within(adc0Map(k), refs(k), 100)) {
+        adc0errors += 1
+      }
+      if (!within(adc1Map(k), refs(k), 100)) {
+        adc1errors += 1
+      }
+      if (!within(adc2Map(k), refs(k), 100)) {
+        adc2errors += 1
+      }
+      if (!within(adc3Map(k), refs(k), 100)) {
+        adc3errors += 1
+      }
+    }
 
-    // diff 60+45
-
+    if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
   }
 
   def RunAdcNoiseTest(): AdcNoiseTestResult = {
@@ -884,9 +1047,6 @@ object ProbeTestController {
 
     val values1 = readChannelStats()
 
-    values1(0).stdev
-    values1(3).stdev
-
     val map0 = Map(
       0 -> 0x0014,
       1 -> 0x0233,
@@ -906,16 +1066,25 @@ object ProbeTestController {
     values0(2)
 
     val pas =
-      within(values1(0).mean, 8192, 5) &&
-      within(values0(1).mean, 8192, 5) &&
-      within(values0(2).mean, 8192, 5) &&
-      within(values1(3).mean, 8192, 5) &&
-      values1(0).stdev < 10 &&
-      values0(1).stdev < 10 &&
-      values0(2).stdev < 10 &&
-      values1(3).stdev < 10
+      within(values1(0).mean, 8192, 10) &&
+        within(values0(1).mean, 8192, 10) &&
+        within(values0(2).mean, 8192, 10) &&
+        within(values1(3).mean, 8192, 10) &&
+        values1(0).stdev < 5 &&
+        values0(1).stdev < 5 &&
+        values0(2).stdev < 5 &&
+        values1(3).stdev < 5
 
-    if (pas) pass(12).value = true else fail(12).value
+    if (pas) pass(12).value = true else fail(12).value = true
+
+    val zambo = new mutable.StringBuilder()
+
+    zambo ++= "Channel 0: " + values1(0) + "\n"
+    zambo ++= "Channel 1: " + values0(1) + "\n"
+    zambo ++= "Channel 2: " + values0(2) + "\n"
+    zambo ++= "Channel 3: " + values1(3)
+
+    PrintToFile(zambo.toString(), "results_noise.txt")
 
     new AdcNoiseTestResult(
       pas,

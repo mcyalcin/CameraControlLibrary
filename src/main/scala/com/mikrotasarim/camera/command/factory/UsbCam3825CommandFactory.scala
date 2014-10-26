@@ -10,9 +10,11 @@ import scala.collection.immutable.IndexedSeq
 
 class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Constants {
   def ChangeSpeedFactor(factor: Int): Unit = {
-    MakeSetWireInValueCommand(0x7,factor).Execute()
+
+    // TODO: Correct this.
+    MakeSetWireInValueCommand(0x7, if (factor == 1) 0 else if (factor == 2) 1 else 2).Execute()
     MakeUpdateWireInsCommand().Execute()
-    MakeActivateTriggerInCommand(0x40,0).Execute()
+    MakeActivateTriggerInCommand(0x40, 0).Execute()
   }
 
   def ConvertToWords(bytes: Array[Byte]): Array[Long] = {
@@ -133,9 +135,9 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     for (i <- 0 until length by 4) {
       val words =
         List(bytesToWord(buf0(i), buf0(i + 1), if (sixteenBitMode) 0 else buf0(i + 2), if (sixteenBitMode) 0 else buf0(i + 3)),
-        bytesToWord(buf1(i), buf1(i + 1), if (sixteenBitMode) 0 else buf1(i + 2), if (sixteenBitMode) 0 else buf1(i + 3)),
-        bytesToWord(buf2(i), buf2(i + 1), if (sixteenBitMode) 0 else buf2(i + 2), if (sixteenBitMode) 0 else buf2(i + 3)),
-        bytesToWord(buf3(i), buf3(i + 1), if (sixteenBitMode) 0 else buf3(i + 2), if (sixteenBitMode) 0 else buf3(i + 3)))
+          bytesToWord(buf1(i), buf1(i + 1), if (sixteenBitMode) 0 else buf1(i + 2), if (sixteenBitMode) 0 else buf1(i + 3)),
+          bytesToWord(buf2(i), buf2(i + 1), if (sixteenBitMode) 0 else buf2(i + 2), if (sixteenBitMode) 0 else buf2(i + 3)),
+          bytesToWord(buf3(i), buf3(i + 1), if (sixteenBitMode) 0 else buf3(i + 2), if (sixteenBitMode) 0 else buf3(i + 3)))
 
       val strings =
         if (radix == 2)
@@ -147,9 +149,9 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
       stringBuilder.append(
         strings(0) + ", " +
-        strings(1) + ", " +
-        strings(2) + ", " +
-        strings(3) + "\n"
+          strings(1) + ", " +
+          strings(2) + ", " +
+          strings(3) + "\n"
       )
     }
 
@@ -324,11 +326,13 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     if (length > FlashBlockSize) throw new Exception("Flash block size violation")
 
     val command = new CompositeCommand(List(
+      MakeResetFlashOutFifoCommand(),
       MakeSetWireInValueCommand(AsicCommandWire, ReadFromFlashMemoryCommand),
       MakeSetWireInValueCommand(FlashCommandWire, FlashReadCommand),
       MakeSetWireInValueCommand(AddressWire, startAddress),
       MakeSetWireInValueCommand(DataWire, length),
-      MakeUpdateWireInsCommand()
+      MakeUpdateWireInsCommand(),
+      MakeActivateTriggerInCommand(0x40,0)
     ))
 
     command.Execute()
@@ -374,14 +378,16 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   def MakeFpgaConfigurationCommand(bit: Long, mask: Long): Command = {
     new SimpleCommand(() => device.SetWireInValue(FpgaConfigWire, bit, mask))
   }
-  
+
   def MakeFlashSectorEraseCommand(address: Int): Command = {
     if (address < 0) throw new Exception("Illegal start address")
     if (address + FlashBlockSize > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
 
     val sectorEraseCommandList = List(
+      MakeFlashWriteLatchEnableCommand(),
       MakeSetWireInValueCommand(AsicCommandWire, WriteToFlashMemoryCommand),
       MakeSetWireInValueCommand(AddressWire, address),
+      MakeSetWireInValueCommand(DataWire, 0),
       MakeSetWireInValueCommand(FlashCommandWire, FlashSectorErase),
       MakeUpdateWireInsCommand(),
       MakeActivateTriggerInCommand(TriggerWire, 0)
@@ -395,9 +401,6 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     if (startAddress + data.length > FlashMemoryMaxAddress) throw new Exception("Illegal end address")
 
     val numberOfFullBlocks = data.length / FlashBlockSize
-
-    // TODO: WTF? This should go into some command list.
-    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
 
     val blockWriteCommandList = (
       for (i <- 0 to numberOfFullBlocks) yield
@@ -495,12 +498,29 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   private def MakeFlashWriteLatchEnableCommand(): Command = {
     new CompositeCommand(
+      MakeSetWireInValueCommand(AsicCommandWire, WriteToFlashMemoryCommand) +:
       MakeSetWireInValueCommand(FlashCommandWire, FlashWriteLatchEnableCommand) +: GenerateCommitWireInCommands
     )
   }
 
   private def MakeResetFlashInFifoCommand(): Command = {
-    MakeActivateTriggerInCommand(TriggerWire, ResetFlashInFifoTriggerBit)
+    new CompositeCommand(
+      List(MakeResetCommand(0, 4),
+        new SimpleCommand(() => device.UpdateWireIns()),
+        MakeResetCommand(4, 4),
+        new SimpleCommand(() => device.UpdateWireIns())
+      )
+    )
+  }
+
+  private def MakeResetFlashOutFifoCommand(): Command = {
+    new CompositeCommand(
+      List(MakeResetCommand(0, 8),
+        new SimpleCommand(() => device.UpdateWireIns()),
+        MakeResetCommand(8, 8),
+        new SimpleCommand(() => device.UpdateWireIns())
+      )
+    )
   }
 
   private def MakeSetFlashInFifoCommand(data: Array[Byte]): Command = {

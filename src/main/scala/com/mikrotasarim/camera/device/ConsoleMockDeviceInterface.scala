@@ -37,5 +37,5 @@ class ConsoleMockDeviceInterface extends DeviceInterface {
     println(size + " bytes read from " + address)
   }
 
-  override def ReadFromBlockPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = ???
+  override def ReadFromBlockPipeOut(address: Int, size: Int, data: Array[Byte]): Unit = {}
 }
