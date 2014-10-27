@@ -17,6 +17,31 @@ import scala.language.reflectiveCalls
 
 object ProbeTestController {
 
+  def RunTest(value: Int): Unit = value match {
+    case 1 => RunCurrentTest()
+    case 2 => RunSerialInterfaceTest()
+    case 3 => RunAsicMemoryToggleTest()
+    case 4 => RunPowerConsumptionTest()
+    case 5 => RunFlashInterfaceTest()
+    case 6 => RunOutputStageTest()
+    case 7 => RunAdcFunctionalityTest()
+    case 8 => RunPgaFunctionalityTest()
+    case 9 => RunInputBufferFunctionalityTest()
+    case 10 => RunPgaGainTest()
+    case 11 => RunAdcLinearityTest()
+    case 12 => RunAdcNoiseTest()
+    case 13 => RunRoicInterfaceTest()
+  }
+
+  val comment = StringProperty("")
+
+  val adcConfigOptions = ObservableBuffer(List(
+    "1.5 MHz",
+    "3.0 MHz"
+  ))
+
+  val selectedAdcConfig = StringProperty("3.0 MHz")
+
   var serialPort: SerialPort = _
 
   def MeasureCurrent() = {
@@ -64,25 +89,11 @@ object ProbeTestController {
   val waferId = StringProperty("Wafer")
   val dieNumber = StringProperty("1")
 
-  def RunTest(value: Int): Unit = value match {
-    case 1 => RunCurrentTest()
-    case 2 => RunSerialInterfaceTest()
-    case 3 => RunAsicMemoryToggleTest()
-    case 4 => RunPowerConsumptionTest()
-    case 5 => RunFlashInterfaceTest()
-    case 6 => RunOutputStageTest()
-    case 7 => RunAdcFunctionalityTest()
-    case 8 => RunPgaFunctionalityTest()
-    case 9 => RunInputBufferFunctionalityTest()
-    case 10 => RunPgaGainTest()
-    case 11 => RunAdcLinearityTest()
-    case 12 => RunAdcNoiseTest()
-    case 13 => RunRoicInterfaceTest()
-  }
+
 
   def RunAllTests(): Unit = {
     outputOn()
-    Thread.sleep(3000)
+    Thread.sleep(4000)
     DeployBitfile()
     Thread.sleep(100)
     for (i <- 1 to 13) RunTest(i)
@@ -125,6 +136,11 @@ object ProbeTestController {
         output ++= "Test " + i + ": "
         if (!pass(i).value) output ++= "Fail\n" else output ++= "Pass\n"
       }
+    }
+
+    if (!comment.value.isEmpty) {
+      output ++= "\n Comment: " + comment.value
+      comment.value = ""
     }
 
     writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/dieSummary.txt"), output.toString())
@@ -219,20 +235,13 @@ object ProbeTestController {
   class MemoryTestResult(val pass: Boolean, val errorCount: Int, val errors: List[(Int, Int)])
 
   def Reset(): Unit = {
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
-    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = true).Execute()
+    commandFactory.MakeFpgaResetCommand(reset = true).Execute()
     Thread.sleep(2)
-    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = false).Execute()
+    commandFactory.MakeFpgaResetCommand(reset = false).Execute()
     Thread.sleep(2)
     for (i <- 0 to 3) DeviceInterfaceModel.ChannelControls.channelEnabled(i).value = false
     Thread.sleep(1)
     for (i <- 0 to 3) DeviceInterfaceModel.ChannelControls.channelEnabled(i).value = true
-    Thread.sleep(5)
-  }
-
-  def Resett(): Unit = {
-    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = true).Execute()
-    DeviceInterfaceModel.commandFactory.MakeFpgaResetCommand(reset = false).Execute()
     Thread.sleep(5)
   }
 
@@ -261,9 +270,9 @@ object ProbeTestController {
 
   def RunAsicMemoryToggleTest(): MemoryTestResult = {
 
-    Reset()
+    commandFactory.ChangeSpeedFactor(4)
 
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(4)
+    Reset()
 
     val errors: mutable.SortedSet[(Int, Int)] = mutable.SortedSet()
 
@@ -386,6 +395,8 @@ object ProbeTestController {
 
   def RunCurrentTest(): CurrentTestResult = {
 
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+
     Reset()
 
     commandFactory.MakeChipResetCommand(reset = false).Execute()
@@ -401,6 +412,8 @@ object ProbeTestController {
 
   def RunSerialInterfaceTest(): Boolean = {
 
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+
     Reset()
 
     var pas = true
@@ -414,6 +427,8 @@ object ProbeTestController {
   }
 
   def RunPowerConsumptionTest(): PowerConsumptionTestResult = {
+
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
 
     Reset()
 
@@ -512,7 +527,7 @@ object ProbeTestController {
 
     commandFactory.ChangeSpeedFactor(1)
 
-    Resett()
+    Reset()
 
     RunFlashSectorErase()
 
@@ -551,18 +566,19 @@ object ProbeTestController {
 
   def RunRoicInterfaceTest(): Boolean = {
 
-    DisconnectFromDevice()
-    Thread.sleep(100)
     DeployAtfile()
+
+    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
 
     Reset()
 
     var pas = true
 
     commandFactory.MakeWriteToRoicMemoryCommand(15, 0xaaaa).Execute()
-    commandFactory.MakeReadFromRoicMemoryCommand(15, o => if (o != 0xaaaa) pas = false).Execute()
-
-    //    DisconnectFromDevice()
+    commandFactory.MakeReadFromRoicMemoryCommand(15, o => if (o != 0xaaaa) {
+      pas = false
+      PrintToFile(o.toString, "results_roicMemory.txt")
+    }).Execute()
 
     DeployBitfile()
     Thread.sleep(100)
@@ -593,6 +609,8 @@ object ProbeTestController {
 
   def RunOutputStageTest(): Boolean = {
 
+    DivideClockForOutput()
+
     Reset()
 
     val testPatternTop = 0x3a28
@@ -603,22 +621,27 @@ object ProbeTestController {
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x70e4).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(28, testPatternTop).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(38, testPatternBot).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0311).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0b11).Execute()
 
-    val values0 = readChannels()
+    val values1 = readChannels()
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(31, 0).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(32, 0).Execute()
 
-    val values01 = readChannels()
+    val values2 = readChannels()
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x50e4).Execute()
-    val values1 = readChannels()
+    val values3 = readChannels()
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(40, 0x0005).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
+
+    if (selectedAdcConfig.value == "1.5 MHz") {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
+      commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
+      commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
+    } else {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x020a).Execute()
+    }
     commandFactory.MakeWriteToAsicMemoryTopCommand(19, 0x000e).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(21, 0x003c).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(22, 0x0233).Execute()
@@ -636,67 +659,125 @@ object ProbeTestController {
     commandFactory.MakeWriteToAsicMemoryTopCommand(88, 0x0066).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x20e4).Execute()
 
-    val values2 = readChannels()
+    val values4 = readChannels()
 
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x2093).Execute()
-    val values3 = readChannels()
+    val values5 = readChannels()
 
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x204e).Execute()
-    val values4 = readChannels()
+    val values6 = readChannels()
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x2039).Execute()
-    val values5 = readChannels()
+    val values7 = readChannels()
+
+    val errors = new mutable.StringBuilder()
 
     var result = true
     if (!(
-      values0(0) == testPatternTop && values0(2) == testPatternBot &&
-        values0(1) == testPatternTop && values0(3) == testPatternBot
-      )) result = false
+      values1(0) == testPatternTop && values1(2) == testPatternBot &&
+        values1(1) == testPatternTop && values1(3) == testPatternBot
+      )) {
+      result = false
+      errors ++= "Error at step 1: \n"
+      errors ++= "Channel 0 -> Observed: " + values1(0) + " Expected: " + testPatternTop + "\n"
+      errors ++= "Channel 1 -> Observed: " + values1(1) + " Expected: " + testPatternTop + "\n"
+      errors ++= "Channel 2 -> Observed: " + values1(2) + " Expected: " + testPatternBot + "\n"
+      errors ++= "Channel 3 -> Observed: " + values1(3) + " Expected: " + testPatternBot + "\n"
+    }
     if (!(
-      values01(0) == testPatternTop && values01(2) == testPatternBot &&
-        values01(1) == testPatternTop && values01(3) == testPatternBot
-      )) result = false
+      values2(0) == testPatternTop && values2(2) == testPatternBot &&
+        values2(1) == testPatternTop && values2(3) == testPatternBot
+      )) {
+      result = false
+      errors ++= "Error at step 2: \n"
+      errors ++= "Channel 0 -> Observed: " + values2(0) + " Expected: " + testPatternTop + "\n"
+      errors ++= "Channel 1 -> Observed: " + values2(1) + " Expected: " + testPatternTop + "\n"
+      errors ++= "Channel 2 -> Observed: " + values2(2) + " Expected: " + testPatternBot + "\n"
+      errors ++= "Channel 3 -> Observed: " + values2(3) + " Expected: " + testPatternBot + "\n"
+    }
     if (!(
-      values1(0) == 0x145c && values1(2) == 0x2834 &&
-        values1(1) == 0x145c && values1(3) == 0x2834
-      )) result = false
-    if (!(within(values2(0), 1432, 700) &&
-      within(values2(1), 14952, 700) &&
-      within(values2(2), 11571, 700) &&
-      within(values2(3), 4812, 700))) result = false
+      values3(0) == 0x145c && values3(2) == 0x2834 &&
+        values3(1) == 0x145c && values3(3) == 0x2834
+      )) {
+      result = false
+      errors ++= "Error at step 3: \n"
+      errors ++= "Channel 0 -> Observed: " + values3(0) + " Expected: " + 0x145c + "\n"
+      errors ++= "Channel 1 -> Observed: " + values3(1) + " Expected: " + 0x145c + "\n"
+      errors ++= "Channel 2 -> Observed: " + values3(2) + " Expected: " + 0x2834 + "\n"
+      errors ++= "Channel 3 -> Observed: " + values3(3) + " Expected: " + 0x2834 + "\n"
+    }
+    if (!(within(values4(0), 1432, 700) &&
+      within(values4(1), 14952, 700) &&
+      within(values4(2), 11571, 700) &&
+      within(values4(3), 4812, 700))) {
+      result = false
+      errors ++= "Error at step 4: \n"
+      errors ++= "Channel 0 -> Observed: " + values4(0) + " Expected: " + 1432 + " with margin 700\n"
+      errors ++= "Channel 1 -> Observed: " + values4(1) + " Expected: " + 14952 + " with margin 700\n"
+      errors ++= "Channel 2 -> Observed: " + values4(2) + " Expected: " + 11571 + " with margin 700\n"
+      errors ++= "Channel 3 -> Observed: " + values4(3) + " Expected: " + 4812 + " with margin 700\n"
+    }
 
-    if (!(within(values3(1), 1432, 700) &&
-      within(values3(2), 14952, 700) &&
-      within(values3(3), 11571, 700) &&
-      within(values3(0), 4812, 700))) result = false
+    if (!(within(values5(1), 1432, 700) &&
+      within(values5(2), 14952, 700) &&
+      within(values5(3), 11571, 700) &&
+      within(values5(0), 4812, 700))) {
+      result = false
+      errors ++= "Error at step 5: \n"
+      errors ++= "Channel 0 -> Observed: " + values5(0) + " Expected: " + 4812 + " with margin 700\n"
+      errors ++= "Channel 1 -> Observed: " + values5(1) + " Expected: " + 1432 + " with margin 700\n"
+      errors ++= "Channel 2 -> Observed: " + values5(2) + " Expected: " + 14952 + " with margin 700\n"
+      errors ++= "Channel 3 -> Observed: " + values5(3) + " Expected: " + 11571 + " with margin 700\n"
+    }
 
-    if (!(within(values4(2), 1432, 700) &&
-      within(values4(3), 14952, 700) &&
-      within(values4(0), 11571, 700) &&
-      within(values4(1), 4812, 700))) result = false
+    if (!(within(values6(2), 1432, 700) &&
+      within(values6(3), 14952, 700) &&
+      within(values6(0), 11571, 700) &&
+      within(values6(1), 4812, 700))) {
+      result = false
+      errors ++= "Error at step 6: \n"
+      errors ++= "Channel 0 -> Observed: " + values6(0) + " Expected: " + 11571 + " with margin 700\n"
+      errors ++= "Channel 1 -> Observed: " + values6(1) + " Expected: " + 4812 + " with margin 700\n"
+      errors ++= "Channel 2 -> Observed: " + values6(2) + " Expected: " + 1432 + " with margin 700\n"
+      errors ++= "Channel 3 -> Observed: " + values6(3) + " Expected: " + 14952 + " with margin 700\n"
+    }
 
-    if (!(within(values5(3), 1432, 700) &&
-      within(values5(0), 14952, 700) &&
-      within(values5(1), 11571, 700) &&
-      within(values5(2), 4812, 700))) result = false
+    if (!(within(values7(3), 1432, 700) &&
+      within(values7(0), 14952, 700) &&
+      within(values7(1), 11571, 700) &&
+      within(values7(2), 4812, 700))) {
+      result = false
+      errors ++= "Error at step 7: \n"
+      errors ++= "Channel 0 -> Observed: " + values7(0) + " Expected: " + 14952 + " with margin 700\n"
+      errors ++= "Channel 1 -> Observed: " + values7(1) + " Expected: " + 11571 + " with margin 700\n"
+      errors ++= "Channel 2 -> Observed: " + values7(2) + " Expected: " + 4812 + " with margin 700\n"
+      errors ++= "Channel 3 -> Observed: " + values7(3) + " Expected: " + 1432 + " with margin 700\n"
+    }
 
-    if (result) pass(6).value = true else fail(6).value = true
+    if (result) pass(6).value = true else {
+      fail(6).value = true
+      PrintToFile(errors.toString(), "results_outputStageErrors.txt")
+    }
 
     result
   }
 
   def InitializeAdc(): Unit = {
+    if (selectedAdcConfig.value == "1.5 MHz") {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
+      commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
+      commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
+    } else {
+      commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x020a).Execute()
+    }
     commandFactory.MakeWriteToAsicMemoryTopCommand(40, 0x0005).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(3, 0x0202).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(10, 0x0004).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(12, 0xa000).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(19, 0x000e).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(31, 0).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(32, 0).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x20e4).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0311).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0b11).Execute()
   }
 
   def SetAdcBlock(baseIndex: Int, valueMap: Map[Int, Int]): Unit = {
@@ -705,6 +786,8 @@ object ProbeTestController {
   }
 
   def RunAdcFunctionalityTest(): Boolean = {
+
+    DivideClockForOutput()
 
     Reset()
     InitializeAdc()
@@ -736,6 +819,8 @@ object ProbeTestController {
 
   def RunPgaFunctionalityTest(): Boolean = {
 
+    DivideClockForOutput()
+
     Reset()
     InitializeAdc()
 
@@ -759,7 +844,17 @@ object ProbeTestController {
       within(values(2), 13260, 500) &&
       within(values(3), 3123, 500)
 
-    if (res) pass(8).value = true else fail(8).value = true
+    if (res) pass(8).value = true else {
+      val errors = new mutable.StringBuilder()
+      errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin 500\n"
+      errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin 500\n"
+      errors ++= "Channel 2 -> Observed: " + values(2) + " Expected: " + 13260 + " with margin 500\n"
+      errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin 500\n"
+
+      PrintToFile(errors.toString(), "results_pgaGain.txt")
+
+      fail(8).value = true
+    }
 
     res
   }
@@ -808,6 +903,8 @@ object ProbeTestController {
 
   def RunInputBufferFunctionalityTest(): Boolean = {
 
+    DivideClockForOutput()
+
     Reset()
     InitializeAdc()
 
@@ -850,12 +947,34 @@ object ProbeTestController {
       within(values1(2), 13260, 500) &&
       within(values1(3), 3123, 500)
 
-    if (res) pass(9).value = true else fail(9).value = true
+    if (res) pass(9).value = true else {
+      val errors = new mutable.StringBuilder()
+
+      errors ++= "Stage 1:\n"
+
+      if (within(values0(0), 4812, 500)) errors ++= "Channel 0 -> Observed: " + values0(0) + " Expected: " + 4812 + " with margin 500\n"
+      if (within(values0(1), 11571, 500)) errors ++= "Channel 0 -> Observed: " + values0(1) + " Expected: " + 11571 + " with margin 500\n"
+      if (within(values0(2), 11571, 500)) errors ++= "Channel 0 -> Observed: " + values0(2) + " Expected: " + 11571 + " with margin 500\n"
+      if (within(values0(3), 4812, 500)) errors ++= "Channel 0 -> Observed: " + values0(3) + " Expected: " + 4812 + " with margin 500\n"
+
+      errors ++= "Stage 2:\n"
+
+      if (within(values1(0), 3123, 500)) errors ++= "Channel 0 -> Observed: " + values1(0) + " Expected: " + 3123 + " with margin 500\n"
+      if (within(values1(1), 13260, 500)) errors ++= "Channel 0 -> Observed: " + values1(1) + " Expected: " + 13260 + " with margin 500\n"
+      if (within(values1(2), 13260, 500)) errors ++= "Channel 0 -> Observed: " + values1(2) + " Expected: " + 13260 + " with margin 500\n"
+      if (within(values1(3), 3123, 500)) errors ++= "Channel 0 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin 500\n"
+
+      PrintToFile(errors.toString(), "results_inputBuffer.txt")
+
+      fail(9).value = true
+    }
 
     res
   }
 
   def RunPgaGainTest(): Boolean = {
+
+    DivideClockForOutput()
 
     Reset()
     InitializeAdc()
@@ -939,6 +1058,8 @@ object ProbeTestController {
 
   def RunAdcLinearityTest() = {
 
+    DivideClockForOutput()
+
     Reset()
     InitializeAdc()
 
@@ -1007,16 +1128,16 @@ object ProbeTestController {
     var adc3errors = 0
 
     for (k <- 0x314 until 0xe88 by 10) {
-      if (!within(adc0Map(k), refs(k), 100)) {
+      if (!within(adc0Map(k), refs(k), 150)) {
         adc0errors += 1
       }
-      if (!within(adc1Map(k), refs(k), 100)) {
+      if (!within(adc1Map(k), refs(k), 150)) {
         adc1errors += 1
       }
-      if (!within(adc2Map(k), refs(k), 100)) {
+      if (!within(adc2Map(k), refs(k), 150)) {
         adc2errors += 1
       }
-      if (!within(adc3Map(k), refs(k), 100)) {
+      if (!within(adc3Map(k), refs(k), 150)) {
         adc3errors += 1
       }
     }
@@ -1025,6 +1146,8 @@ object ProbeTestController {
   }
 
   def RunAdcNoiseTest(): AdcNoiseTestResult = {
+
+    DivideClockForOutput()
 
     Reset()
     InitializeAdc()
@@ -1091,6 +1214,14 @@ object ProbeTestController {
       values1(0).stdev, values0(1).stdev, values0(2).stdev, values1(3).stdev,
       values1(0).mean, values0(1).mean, values0(2).mean, values1(3).mean
     )
+  }
+
+  def DivideClockForOutput(): Unit = {
+    if (selectedAdcConfig.value == "1.5 MHz") {
+      DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    } else {
+      DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(1)
+    }
   }
 
   class AdcNoiseTestResult(

@@ -100,8 +100,33 @@ object MtAs1410x2ProbeTestStage extends Stage {
           }
         )
       },
-      createSweepReferenceControl()
+      createAdcConversionControl(),
+      createSweepReferenceControl(),
+      createCommentControl()
     )
+  }
+
+  private def createAdcConversionControl(): Node = new HBox {
+    spacing = 10
+    content = List(
+      new Label("Conversion freq"),
+      new ChoiceBox(ProbeTestController.adcConfigOptions) {
+        value <==> ProbeTestController.selectedAdcConfig
+      }
+    )
+  }
+
+  private def createCommentControl(): Node = {
+    new VBox {
+      spacing = 10
+      content = List(
+        new Label("Comment:"),
+        new TextField {
+          text <==> ProbeTestController.comment
+        }
+      )
+    }
+
   }
 
   private def createSweepReferenceControl(): Node = {
