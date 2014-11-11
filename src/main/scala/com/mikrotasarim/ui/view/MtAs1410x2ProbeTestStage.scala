@@ -4,9 +4,7 @@ import com.mikrotasarim.ui.model.ProbeTestController
 
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
-import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
-import scalafx.scene.chart.{XYChart, LineChart, NumberAxis}
 import scalafx.scene.{Node, Scene}
 import scalafx.scene.control._
 import scalafx.scene.layout.{HBox, VBox}
@@ -25,31 +23,10 @@ object MtAs1410x2ProbeTestStage extends Stage {
         content = List(
           createIdColumn(),
           createTestColumn()//,
-//          createDacSweepCharts()
         )
       }
     }
   }
-
-//  private def createDacSweepCharts(): Node = new VBox {
-//    spacing = 10
-//    content = List(
-//      new HBox {
-//        spacing = 10
-//        content = List(
-//          createDacSweepChart(0),
-//          createDacSweepChart(1)
-//        )
-//      },
-//      new HBox {
-//        spacing = 10
-//        content = List(
-//          createDacSweepChart(2),
-//          createDacSweepChart(3)
-//        )
-//      }
-//    )
-//  }
 
   private def createIdColumn(): Node = new VBox {
     spacing = 10
@@ -183,38 +160,6 @@ object MtAs1410x2ProbeTestStage extends Stage {
       )
     }
   }
-
-//  private def createDacSweepChart(i: Int): Node = {
-//    val xAxis = new NumberAxis
-//    xAxis.label = "Memory Value"
-//    xAxis.forceZeroInRange = false
-//    val yAxis = new NumberAxis
-//
-//    val lineChart = LineChart(xAxis, yAxis)
-//    lineChart.title = "DAC Sweep Result " + i
-//    lineChart.setPrefWidth(300)
-//    lineChart.setPrefHeight(250)
-//
-//    val data =
-//      ObservableBuffer(
-//        (for (i <- 0x378 until 0xe24 by 10) yield (i, math.log10(i)))
-//          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-//
-//    ProbeTestController.chartData(i).onChange(
-//      {
-//        val data =
-//          ObservableBuffer(
-//            (for (j <- 0x378 until 0xe24 by 10) yield (j, ProbeTestController.chartData(i)(j)))
-//              map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-//      }
-//    )
-//
-//    val series = XYChart.Series[Number, Number]("Value read", data)
-//    lineChart.getData.add(series)
-//    lineChart.createSymbols = false
-//
-//    lineChart
-//  }
 
   private def createLabelControls(): Node = {
     new VBox {

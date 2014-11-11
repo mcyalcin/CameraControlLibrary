@@ -1,19 +1,19 @@
 package com.mikrotasarim.ui.model
 
-import java.io.{FileWriter, File}
+import java.io.{File, FileWriter}
 import java.text.SimpleDateFormat
-import scalax.file.Path
 
 import com.mikrotasarim.camera.command.factory.UsbCam3825CommandFactory
 import com.mikrotasarim.camera.device.OpalKellyInterface
-import jssc.{SerialPortList, SerialPort}
+import jssc.{SerialPort, SerialPortList}
 
-import scala.io.Source
 import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
+import scala.io.Source
+import scala.language.reflectiveCalls
 import scalafx.beans.property.{BooleanProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
-import scala.language.reflectiveCalls
+import scalax.file.Path
 
 object ProbeTestController {
 
@@ -370,21 +370,23 @@ object ProbeTestController {
                                     val lvds7Current: Double
                                     ) {
 
+    val margin = 0.015
+
     def pass: Boolean = {
-      within(resetCurrent, 0.200, 0.010) &&
-        within(runningCurrent, 0.214, 0.010) &&
-        within(oneChannelCurrent, 0.260, 0.010) &&
-        within(twoChannelCurrent, 0.294, 0.010) &&
-        within(fourChannelCurrent, 0.355, 0.010) &&
-        within(noLvdsCurrent, 0.320, 0.010) &&
-        within(lvds0Current, 0.326, 0.010) &&
-        within(lvds1Current, 0.332, 0.010) &&
-        within(lvds2Current, 0.334, 0.010) &&
-        within(lvds3Current, 0.337, 0.010) &&
-        within(lvds4Current, 0.342, 0.010) &&
-        within(lvds5Current, 0.346, 0.010) &&
-        within(lvds6Current, 0.350, 0.010) &&
-        within(lvds7Current, 0.355, 0.010)
+      within(resetCurrent, 0.200, margin) &&
+        within(runningCurrent, 0.214, margin) &&
+        within(oneChannelCurrent, 0.260, margin) &&
+        within(twoChannelCurrent, 0.294, margin) &&
+        within(fourChannelCurrent, 0.355, margin) &&
+        within(noLvdsCurrent, 0.320, margin) &&
+        within(lvds0Current, 0.326, margin) &&
+        within(lvds1Current, 0.332, margin) &&
+        within(lvds2Current, 0.334, margin) &&
+        within(lvds3Current, 0.337, margin) &&
+        within(lvds4Current, 0.342, margin) &&
+        within(lvds5Current, 0.346, margin) &&
+        within(lvds6Current, 0.350, margin) &&
+        within(lvds7Current, 0.355, margin)
     }
   }
 
@@ -621,7 +623,7 @@ object ProbeTestController {
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x70e4).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(28, testPatternTop).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(38, testPatternBot).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0b11).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0c11).Execute()
 
     val values1 = readChannels()
 
@@ -777,7 +779,7 @@ object ProbeTestController {
     commandFactory.MakeWriteToAsicMemoryTopCommand(31, 0).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(32, 0).Execute()
     commandFactory.MakeWriteToAsicMemoryTopCommand(35, 0x20e4).Execute()
-    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0b11).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(36, 0x0c11).Execute()
   }
 
   def SetAdcBlock(baseIndex: Int, valueMap: Map[Int, Int]): Unit = {
@@ -839,19 +841,21 @@ object ProbeTestController {
 
     val values = readChannels()
 
-    val res = within(values(0), 3123, 500) &&
-      within(values(1), 13260, 500) &&
-      within(values(2), 13260, 500) &&
-      within(values(3), 3123, 500)
+    val margin = 700
+
+    val res = within(values(0), 3123, margin) &&
+      within(values(1), 13260, margin) &&
+      within(values(2), 13260, margin) &&
+      within(values(3), 3123, margin)
 
     if (res) pass(8).value = true else {
       val errors = new mutable.StringBuilder()
-      errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin 500\n"
-      errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin 500\n"
-      errors ++= "Channel 2 -> Observed: " + values(2) + " Expected: " + 13260 + " with margin 500\n"
-      errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin 500\n"
+      errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values(2) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
-      PrintToFile(errors.toString(), "results_pgaGain.txt")
+      PrintToFile(errors.toString(), "results_pgaFunctionality.txt")
 
       fail(8).value = true
     }
@@ -938,31 +942,33 @@ object ProbeTestController {
 
     val values1 = readChannels()
 
-    val res = within(values0(0), 4812, 500) &&
-      within(values0(1), 11571, 500) &&
-      within(values0(2), 11571, 500) &&
-      within(values0(3), 4812, 500) &&
-      within(values1(0), 3123, 500) &&
-      within(values1(1), 13260, 500) &&
-      within(values1(2), 13260, 500) &&
-      within(values1(3), 3123, 500)
+    val margin = 700
+
+    val res = within(values0(0), 4812, margin) &&
+      within(values0(1), 11571, margin) &&
+      within(values0(2), 11571, margin) &&
+      within(values0(3), 4812, margin) &&
+      within(values1(0), 3123, margin) &&
+      within(values1(1), 13260, margin) &&
+      within(values1(2), 13260, margin) &&
+      within(values1(3), 3123, margin)
 
     if (res) pass(9).value = true else {
       val errors = new mutable.StringBuilder()
 
       errors ++= "Stage 1:\n"
 
-      if (within(values0(0), 4812, 500)) errors ++= "Channel 0 -> Observed: " + values0(0) + " Expected: " + 4812 + " with margin 500\n"
-      if (within(values0(1), 11571, 500)) errors ++= "Channel 0 -> Observed: " + values0(1) + " Expected: " + 11571 + " with margin 500\n"
-      if (within(values0(2), 11571, 500)) errors ++= "Channel 0 -> Observed: " + values0(2) + " Expected: " + 11571 + " with margin 500\n"
-      if (within(values0(3), 4812, 500)) errors ++= "Channel 0 -> Observed: " + values0(3) + " Expected: " + 4812 + " with margin 500\n"
+      errors ++= "Channel 0 -> Observed: " + values0(0) + " Expected: " + 4812 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values0(1) + " Expected: " + 11571 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values0(2) + " Expected: " + 11571 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values0(3) + " Expected: " + 4812 + " with margin " + margin + "\n"
 
       errors ++= "Stage 2:\n"
 
-      if (within(values1(0), 3123, 500)) errors ++= "Channel 0 -> Observed: " + values1(0) + " Expected: " + 3123 + " with margin 500\n"
-      if (within(values1(1), 13260, 500)) errors ++= "Channel 0 -> Observed: " + values1(1) + " Expected: " + 13260 + " with margin 500\n"
-      if (within(values1(2), 13260, 500)) errors ++= "Channel 0 -> Observed: " + values1(2) + " Expected: " + 13260 + " with margin 500\n"
-      if (within(values1(3), 3123, 500)) errors ++= "Channel 0 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin 500\n"
+      errors ++= "Channel 0 -> Observed: " + values1(0) + " Expected: " + 3123 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values1(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values1(2) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
       PrintToFile(errors.toString(), "results_inputBuffer.txt")
 
@@ -1051,9 +1057,6 @@ object ProbeTestController {
 
   val sweepReferenceFilePath = StringProperty("")
 
-  //  val chartData = new Array[ObservableBuffer[I](3)
-  //  val chartData = new Array[ObservableBuffer[javafx.scene.chart.XYChart.Data[Number,Number]]](4)
-
   val cd = ObservableBuffer[(Number, Number)]()
 
   def RunAdcLinearityTest() = {
@@ -1099,22 +1102,6 @@ object ProbeTestController {
     val adc2Map = adc2.toMap
     val adc3Map = adc3.toMap
 
-    //    chartData(0) =   ObservableBuffer(
-    //        (for (i <- 0x378 until 0xe24 by 10) yield (i, adc0Map(i)))
-    //          map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-    //
-    //    chartData(1)=   ObservableBuffer(
-    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc1Map(i)))
-    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-    //
-    //    chartData(2) =   ObservableBuffer(
-    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc2Map(i)))
-    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-    //
-    //    chartData(3) =   ObservableBuffer(
-    //      (for (i <- 0x378 until 0xe24 by 10) yield (i, adc3Map(i)))
-    //        map { case (x, y) => XYChart.Data[Number, Number](x, y).delegate})
-
     var k = 0x30a
 
     val refs = (for (line <- Source.fromFile(sweepReferenceFilePath.value).getLines()) yield {
@@ -1127,20 +1114,28 @@ object ProbeTestController {
     var adc2errors = 0
     var adc3errors = 0
 
+    val errors = new mutable.StringBuilder()
+
     for (k <- 0x314 until 0xe88 by 10) {
       if (!within(adc0Map(k), refs(k), 150)) {
         adc0errors += 1
+        errors ++= "Channel 0: " + k + " -> Read: " + adc0Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
       }
       if (!within(adc1Map(k), refs(k), 150)) {
         adc1errors += 1
+        errors ++= "Channel 1: " + k + " -> Read: " + adc1Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
       }
       if (!within(adc2Map(k), refs(k), 150)) {
         adc2errors += 1
+        errors ++= "Channel 2: " + k + " -> Read: " + adc2Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
       }
       if (!within(adc3Map(k), refs(k), 150)) {
         adc3errors += 1
+        errors ++= "Channel 3: " + k + " -> Read: " + adc3Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
       }
     }
+
+    PrintToFile(errors.toString(), "results_linearityErrors.txt")
 
     if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
   }
