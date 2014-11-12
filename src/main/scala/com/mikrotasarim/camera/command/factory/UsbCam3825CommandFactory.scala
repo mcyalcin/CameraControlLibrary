@@ -50,9 +50,41 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   def RunDacSweepTest1(filename: String) = {
 
-    val stats = for (i <- 0x378 until 0xe24) yield {
+    val stats = for (i <- 0 until 0xffff) yield {
 
-      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
+      SetPositiveDacs(i)
+
+      MakeReadOutputCommand(256 * 4).Execute()
+
+      RunDacSweepTest
+    }
+
+    PrintStats(filename, stats)
+  }
+
+  def convertToWireValue(wire: Int, value: Int): Int = {
+    wire * 1048576 + value * 16
+  }
+
+  def SetPositiveDacs(value: Int) = {
+    device.SetWireInValue(0x07, convertToWireValue(1, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(2, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(5, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(6, value), 0xfffff0)
+  }
+
+  def SetNegativeDacs(value: Int) = {
+    device.SetWireInValue(0x07, convertToWireValue(0, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(3, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(4, value), 0xfffff0)
+    device.SetWireInValue(0x07, convertToWireValue(7, value), 0xfffff0)
+  }
+
+  def RunDacSweepTest2(filename: String) = {
+
+    val stats = for (i <- 0 until 0xffff) yield {
+      SetPositiveDacs(i)
+      SetNegativeDacs((0xe24 + 0x378) - i)
 
       MakeReadOutputCommand(256 * 4).Execute()
 
@@ -78,19 +110,6 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   class Stats(val mean: Double, val stdev: Double, val min: Long, val max: Long) {
     override def toString = mean + ", " + stdev + ", " + min + ", " + max
-  }
-
-  def RunDacSweepTest2(filename: String) = {
-
-    val stats = for (i <- 0x378 until 0xe24) yield {
-      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
-      MakeWriteToAsicMemoryTopCommand(79, (0xe24 + 0x378) - i + 0x5000).Execute()
-      MakeReadOutputCommand(256 * 4).Execute()
-
-      RunDacSweepTest
-    }
-
-    PrintStats(filename, stats)
   }
 
   def using[A <: {def close() : Unit}, B](resource: A)(f: A => B): B =
