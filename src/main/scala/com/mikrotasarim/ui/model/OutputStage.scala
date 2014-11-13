@@ -232,7 +232,10 @@ class OutputStage {
 
   class drivePowerMemoryLocation(override val address: Int) extends MemoryLocation {
     override def memoryValue: Long = {
-      padMap.keys.toList.filter(padMap(_)._1 == address).map(p => p.committedPower * (2 pow padMap(p)._2)).sum
+      padMap.keys.toList.filter(padMap(_)._1 == address).map(p => {
+        val value = p.committedPower * 2 + {if (p.committedSingleSelected) 0 else 1}
+        value * (2 pow padMap(p)._2)
+      }).sum
     }
   }
 
