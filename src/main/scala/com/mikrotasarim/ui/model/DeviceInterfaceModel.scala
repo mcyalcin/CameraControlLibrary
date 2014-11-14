@@ -105,11 +105,11 @@ object DeviceInterfaceModel {
 
   def RunDacSweepTest1(): Unit = {
     Future {
-      commandFactory.RunDacSweepTest1(dacSweepTest1OutFilePath.value)
+      commandFactory.RunInternalDacSweepTest1(dacSweepTest1OutFilePath.value)
     }(ec)
   }
 
-  def RunDacSweepTest2(): Unit = commandFactory.RunDacSweepTest2(dacSweepTest2OutFilePath.value)
+  def RunDacSweepTest2(): Unit = commandFactory.RunInternalDacSweepTest2(dacSweepTest2OutFilePath.value)
 
   var adcChannel = new AdcChannel
   var biasGenerator = new BiasGenerator

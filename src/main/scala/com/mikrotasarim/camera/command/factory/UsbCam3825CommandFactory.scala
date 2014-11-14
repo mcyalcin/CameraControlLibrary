@@ -49,16 +49,40 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
   }
 
   def RunDacSweepTest1(filename: String) = {
-
     val stats = for (i <- 0 until 0xffff) yield {
-
       SetPositiveDacs(i)
-
       MakeReadOutputCommand(256 * 4).Execute()
-
       RunDacSweepTest
     }
+    PrintStats(filename, stats)
+  }
 
+  def RunDacSweepTest2(filename: String) = {
+    val stats = for (i <- 0 until 0xffff) yield {
+      SetPositiveDacs(i)
+      SetNegativeDacs((0xe24 + 0x378) - i)
+      MakeReadOutputCommand(256 * 4).Execute()
+      RunDacSweepTest
+    }
+    PrintStats(filename, stats)
+  }
+
+  def RunInternalDacSweepTest1(filename: String) = {
+    val stats = for (i <- 0 until 0xfff) yield {
+      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
+      MakeReadOutputCommand(256 * 4).Execute()
+      RunDacSweepTest
+    }
+    PrintStats(filename, stats)
+  }
+
+  def RunInternalDacSweepTest2(filename: String) = {
+    val stats = for (i <- 0 until 0xfff; j <- 0xfff - i to math.max(0xfff - i - 1, 0) by -1) yield {
+      MakeWriteToAsicMemoryTopCommand(80, i + 0x5000).Execute()
+      MakeWriteToAsicMemoryTopCommand(79, 0x5000 + j).Execute()
+      MakeReadOutputCommand(256 * 4).Execute()
+      RunDacSweepTest
+    }
     PrintStats(filename, stats)
   }
 
@@ -78,20 +102,6 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     device.SetWireInValue(0x07, convertToWireValue(3, value), 0xfffff0)
     device.SetWireInValue(0x07, convertToWireValue(4, value), 0xfffff0)
     device.SetWireInValue(0x07, convertToWireValue(7, value), 0xfffff0)
-  }
-
-  def RunDacSweepTest2(filename: String) = {
-
-    val stats = for (i <- 0 until 0xffff) yield {
-      SetPositiveDacs(i)
-      SetNegativeDacs((0xe24 + 0x378) - i)
-
-      MakeReadOutputCommand(256 * 4).Execute()
-
-      RunDacSweepTest
-    }
-
-    PrintStats(filename, stats)
   }
 
   def PrintStats(filename: String, stats: IndexedSeq[Array[Stats]]) {
