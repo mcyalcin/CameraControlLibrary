@@ -8,7 +8,7 @@ import com.mikrotasarim.ui.view.UsbCam3825TestUtility
 
 import scala.concurrent.{Future, ExecutionContext}
 import scalafx.application.Platform
-import scalafx.beans.property.{BooleanProperty, StringProperty}
+import scalafx.beans.property.{IntegerProperty, BooleanProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
 
 object JavaFXExecutionContext {
@@ -111,6 +111,9 @@ object DeviceInterfaceModel {
 
   def RunDacSweepTest2(): Unit = commandFactory.RunInternalDacSweepTest2(dacSweepTest2OutFilePath.value)
 
+  def RunExternalDacSweepTest1(): Unit = commandFactory.RunDacSweepTest1(dacSweepTest1OutFilePath.value)
+  def RunExternalDacSweepTest2(): Unit = commandFactory.RunDacSweepTest2(dacSweepTest2OutFilePath.value)
+
   var adcChannel = new AdcChannel
   var biasGenerator = new BiasGenerator
   var digitalController = new DigitalController
@@ -162,4 +165,11 @@ object DeviceInterfaceModel {
   val embeddedDvalFval = BooleanProperty(value = false)
 
   embeddedDvalFval.onChange(DeviceInterfaceModel.commandFactory.MakeFpgaDvalFvalSelectionCommand(embeddedDvalFval.value).Execute())
+
+  val positiveDacsValue = IntegerProperty(0)
+  val negativeDacsValue = IntegerProperty(0)
+
+  positiveDacsValue.onChange(commandFactory.SetPositiveDacs(positiveDacsValue.value))
+  negativeDacsValue.onChange(commandFactory.SetNegativeDacs(negativeDacsValue.value))
+
 }

@@ -92,16 +92,32 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
 
   def SetPositiveDacs(value: Int) = {
     device.SetWireInValue(0x07, convertToWireValue(1, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(2, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(5, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(6, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
   }
 
   def SetNegativeDacs(value: Int) = {
     device.SetWireInValue(0x07, convertToWireValue(0, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(3, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(4, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
     device.SetWireInValue(0x07, convertToWireValue(7, value), 0xfffff0)
+    device.UpdateWireIns()
+    device.ActivateTriggerIn(0x42,0)
   }
 
   def PrintStats(filename: String, stats: IndexedSeq[Array[Stats]]) {

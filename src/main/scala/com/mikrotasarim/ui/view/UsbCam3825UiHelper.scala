@@ -63,8 +63,11 @@ object UsbCam3825UiHelper {
     new HBox {
       spacing = 10
       content = List(
-        new Label(label),
+        new Label(label){
+          prefWidth = 100
+        },
         new Slider {
+          prefWidth = 200
           min = mini
           max = maxi
           value <==> model
@@ -74,7 +77,7 @@ object UsbCam3825UiHelper {
         },
         new Label {
           text <== model.asString
-          prefWidth = 20
+          prefWidth = 50
         }
       )
     }

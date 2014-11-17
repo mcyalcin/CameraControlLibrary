@@ -34,6 +34,9 @@ object UsbCam3825AdcChannelControls {
             new Button("Dac Sweep 1") {
               onAction = handle { DeviceInterfaceModel.RunDacSweepTest1() }
             },
+            new Button("External Dac Sweep 1") {
+              onAction = handle { DeviceInterfaceModel.RunExternalDacSweepTest1() }
+            },
             new TextField {
               promptText = "Enter output file name"
               text <==> DeviceInterfaceModel.dacSweepTest1OutFilePath
@@ -46,12 +49,17 @@ object UsbCam3825AdcChannelControls {
             new Button("Dac Sweep 2") {
               onAction = handle { DeviceInterfaceModel.RunDacSweepTest2() }
             },
+            new Button("External Dac Sweep 2") {
+              onAction = handle { DeviceInterfaceModel.RunExternalDacSweepTest2() }
+            },
             new TextField {
               promptText = "Enter output file name"
               text <==> DeviceInterfaceModel.dacSweepTest2OutFilePath
             }
           )
-        }
+        },
+        UsbCam3825UiHelper.createLabeledSnappingSliderGroup("Positive Dacs", DeviceInterfaceModel.positiveDacsValue, 0,0xffff,1),
+        UsbCam3825UiHelper.createLabeledSnappingSliderGroup("Negative Dacs", DeviceInterfaceModel.negativeDacsValue, 0,0xffff,1)
       )
     }
 
