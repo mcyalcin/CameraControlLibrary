@@ -17,6 +17,33 @@ import scalax.file.Path
 
 object ProbeTestController {
 
+  class TestCase(val label: String, val test: () => Boolean) {
+
+    val pass = BooleanProperty(value = false)
+    val fail = BooleanProperty(value = false)
+
+    def Run(): Unit = {
+      if (test()) pass.value = true else fail.value = true
+    }
+  }
+
+  def testCases = ObservableBuffer(
+    new TestCase("1. Current Test", RunCurrentTest),
+    new TestCase("2. Serial Interface Test", RunSerialInterfaceTest),
+    new TestCase("3. Memory Test", RunAsicMemoryToggleTest),
+    new TestCase("4. Power Consumption Test", RunPowerConsumptionTest),
+    new TestCase("5. Flash Memory Test", RunFlashInterfaceTest),
+    new TestCase("6. Output Stage Test", RunOutputStageTest),
+    new TestCase("7a. ADC Functionality Test with TG", RunAdcFunctionalityTest),
+    new TestCase("7b. ADC Functionality Test with CTG", RunAdcFunctionalityTestWithCtg),
+    new TestCase("8. PGA Functionality Test", RunPgaFunctionalityTest),
+    new TestCase("9. Input Buffer Test", RunInputBufferFunctionalityTest),
+    new TestCase("10. PGA Gain Test", RunPgaGainTest),
+    new TestCase("11. ADC Channel Linearity Test", RunAdcLinearityTest),
+    new TestCase("12. ADC Channel Noise Test", RunAdcNoiseTest),
+    new TestCase("13. ROIC Memory Test", RunRoicInterfaceTest)
+  )
+
   def RunTest(value: Int): Unit = value match {
     case 1 => RunCurrentTest()
     case 2 => RunSerialInterfaceTest()
@@ -32,6 +59,57 @@ object ProbeTestController {
     case 12 => RunAdcNoiseTest()
     case 13 => RunRoicInterfaceTest()
   }
+
+  val labels = Array(
+    "0.",
+    "1. Current Test",
+    "2. Serial Interface Test",
+    "3. Memory Test",
+    "4. Power Consumption Test",
+    "5. Flash Memory Test",
+    "6. Output Stage Test",
+    "7. ADC Functionality Test",
+    "8. PGA Functionality Test",
+    "9. Input Buffer Test",
+    "10. PGA Gain Test",
+    "11. ADC Channel Linearity Test",
+    "12. ADC Channel Noise Test",
+    "13. Roic Memory Test"
+  )
+
+  val pass = ObservableBuffer(
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false)
+  )
+
+  val fail = ObservableBuffer(
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false),
+    BooleanProperty(value = false)
+  )
 
   val comment = StringProperty("")
 
@@ -157,57 +235,6 @@ object ProbeTestController {
   val current = StringProperty("Current Off Reset: 0")
   val faultyBits = new StringProperty("Faulty Bits: 0")
 
-  val labels = Array(
-    "0.",
-    "1. Current Test",
-    "2. Serial Interface Test",
-    "3. Memory Test",
-    "4. Power Consumption Test",
-    "5. Flash Memory Test",
-    "6. Output Stage Test",
-    "7. ADC Functionality Test",
-    "8. PGA Functionality Test",
-    "9. Input Buffer Test",
-    "10. PGA Gain Test",
-    "11. ADC Channel Linearity Test",
-    "12. ADC Channel Noise Test",
-    "13. Roic Memory Test"
-  )
-
-  val pass = ObservableBuffer(
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false)
-  )
-
-  val fail = ObservableBuffer(
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false)
-  )
-
   class ProbeTestResult(
                          val currentTestResult: Option[CurrentTestResult],
                          val serialInterfaceTestResult: Option[Boolean],
@@ -268,7 +295,7 @@ object ProbeTestController {
     writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/" + filename), output)
   }
 
-  def RunAsicMemoryToggleTest(): MemoryTestResult = {
+  def RunAsicMemoryToggleTest(): Boolean = {
 
     commandFactory.ChangeSpeedFactor(4)
 
@@ -331,7 +358,7 @@ object ProbeTestController {
       PrintToFile(output.toString(), "results_memoryErrors.txt")
     }
 
-    new MemoryTestResult(errors.isEmpty, errors.toList.length, errors.toList)
+    errors.isEmpty
   }
 
   val volatileAddresses = Set(93)
@@ -395,7 +422,7 @@ object ProbeTestController {
                            val currentValue: Double
                            )
 
-  def RunCurrentTest(): CurrentTestResult = {
+  def RunCurrentTest(): Boolean = {
 
     DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
 
@@ -409,7 +436,7 @@ object ProbeTestController {
 
     if (value < max && value > min) pass(1).value = true else fail(1).value = true
 
-    new CurrentTestResult(value < max && value > min, value)
+    value < max && value > min
   }
 
   def RunSerialInterfaceTest(): Boolean = {
@@ -428,7 +455,7 @@ object ProbeTestController {
     pas
   }
 
-  def RunPowerConsumptionTest(): PowerConsumptionTestResult = {
+  def RunPowerConsumptionTest(): Boolean = {
 
     DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
 
@@ -522,7 +549,7 @@ object ProbeTestController {
 
     writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/results_powerTest.txt"), output.toString())
 
-    res
+    res.pass
   }
 
   def RunFlashInterfaceTest(): Boolean = {
@@ -819,6 +846,38 @@ object ProbeTestController {
     res
   }
 
+  def RunAdcFunctionalityTestWithCtg(): Boolean = {
+
+    DivideClockForOutput()
+
+    Reset()
+    InitializeAdc()
+
+    val map = Map(
+      0 -> 0x0333,
+      1 -> 0x0233,
+      2 -> 0x001e,
+      3 -> 0x0084,
+      4 -> 0x0084,
+      5 -> 0x0017,
+      6 -> 0x0066
+    )
+
+    SetAdcBlock(21, map)
+    SetAdcBlock(82, map)
+
+    val values = readChannels()
+
+    val res = within(values(0), 4812, 500) &&
+      within(values(1), 11571, 500) &&
+      within(values(2), 11571, 500) &&
+      within(values(3), 4812, 500)
+
+    if (res) pass(7).value = true else fail(7).value = true
+
+    res
+  }
+
   def RunPgaFunctionalityTest(): Boolean = {
 
     DivideClockForOutput()
@@ -1059,7 +1118,7 @@ object ProbeTestController {
 
   val cd = ObservableBuffer[(Number, Number)]()
 
-  def RunAdcLinearityTest() = {
+  def RunAdcLinearityTest(): Boolean = {
 
     DivideClockForOutput()
 
@@ -1138,9 +1197,11 @@ object ProbeTestController {
     PrintToFile(errors.toString(), "results_linearityErrors.txt")
 
     if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
+
+    adc0errors + adc1errors + adc2errors + adc3errors == 0
   }
 
-  def RunAdcNoiseTest(): AdcNoiseTestResult = {
+  def RunAdcNoiseTest(): Boolean = {
 
     DivideClockForOutput()
 
@@ -1204,11 +1265,11 @@ object ProbeTestController {
 
     PrintToFile(zambo.toString(), "results_noise.txt")
 
-    new AdcNoiseTestResult(
+    (new AdcNoiseTestResult(
       pas,
       values1(0).stdev, values0(1).stdev, values0(2).stdev, values1(3).stdev,
       values1(0).mean, values0(1).mean, values0(2).mean, values1(3).mean
-    )
+    )).pass
   }
 
   def DivideClockForOutput(): Unit = {

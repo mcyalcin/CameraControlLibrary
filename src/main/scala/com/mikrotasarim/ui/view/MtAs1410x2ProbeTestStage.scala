@@ -1,6 +1,7 @@
 package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.ProbeTestController
+import com.mikrotasarim.ui.model.ProbeTestController.TestCase
 
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
@@ -124,7 +125,22 @@ object MtAs1410x2ProbeTestStage extends Stage {
 
   private def createTestColumn(): Node = new VBox {
     spacing = 10
-    content = for (i <- 1 to 13) yield createTestControl(i)
+    content = for (testCase <- ProbeTestController.testCases) yield createTestControl(testCase)
+  }
+
+  private def createTestControl(testCase: TestCase): Node = new HBox {
+    spacing = 10
+    content = List(
+      new Label(testCase.label) {
+        prefWidth = 250
+      },
+      passFailControl(testCase.pass, testCase.fail),
+      new Button("Run") {
+        onAction = handle {
+          testCase.Run()
+        }
+      }
+    )
   }
 
   private def createTestControl(i: Int): Node = new HBox {
