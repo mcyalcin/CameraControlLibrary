@@ -132,7 +132,7 @@ object MtAs1410x2ProbeTestStage extends Stage {
     spacing = 10
     content = List(
       new Label(testCase.label) {
-        prefWidth = 250
+        prefWidth = 280
       },
       passFailControl(testCase.pass, testCase.fail),
       new Button("Run") {

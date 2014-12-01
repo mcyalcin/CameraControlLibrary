@@ -36,10 +36,14 @@ object ProbeTestController {
     new TestCase("6. Output Stage Test", RunOutputStageTest),
     new TestCase("7a. ADC Functionality Test with TG", RunAdcFunctionalityTest),
     new TestCase("7b. ADC Functionality Test with CTG", RunAdcFunctionalityTestWithCtg),
-    new TestCase("8. PGA Functionality Test", RunPgaFunctionalityTest),
-    new TestCase("9. Input Buffer Test", RunInputBufferFunctionalityTest),
-    new TestCase("10. PGA Gain Test", RunPgaGainTest),
-    new TestCase("11. ADC Channel Linearity Test", RunAdcLinearityTest),
+    new TestCase("8a. PGA Functionality Test with TG", RunPgaFunctionalityTest),
+    new TestCase("8b. PGA Functionality Test with CTG", RunPgaFunctionalityTestWithCtg),
+    new TestCase("9a. Input Buffer Test with TG", RunInputBufferFunctionalityTest),
+    new TestCase("9b. Input Buffer Test with CTG", RunInputBufferFunctionalityTestWithCtg),
+    new TestCase("10a. PGA Gain Test with TG", RunPgaGainTest),
+    new TestCase("10b. PGA Gain Test with CTG", RunPgaGainTestWithCtg),
+    new TestCase("11a. ADC Channel Linearity Test with TG", RunAdcLinearityTest),
+    new TestCase("11b. ADC Channel Linearity Test with CTG", RunAdcLinearityTestWithCtg),
     new TestCase("12. ADC Channel Noise Test", RunAdcNoiseTest),
     new TestCase("13. ROIC Memory Test", RunRoicInterfaceTest)
   )
@@ -922,6 +926,50 @@ object ProbeTestController {
     res
   }
 
+  def RunPgaFunctionalityTestWithCtg(): Boolean = {
+
+    DivideClockForOutput()
+
+    Reset()
+    InitializeAdc()
+
+    val map = Map(
+      0 -> 0x03ff,
+      1 -> 0x0233,
+      2 -> 0x001e,
+      3 -> 0x0108,
+      4 -> 0x0108,
+      5 -> 0x0014,
+      6 -> 0x0006
+    )
+
+    SetAdcBlock(21, map)
+    SetAdcBlock(82, map)
+
+    val values = readChannels()
+
+    val margin = 700
+
+    val res = within(values(0), 3123, margin) &&
+      within(values(1), 13260, margin) &&
+      within(values(2), 13260, margin) &&
+      within(values(3), 3123, margin)
+
+    if (res) pass(8).value = true else {
+      val errors = new mutable.StringBuilder()
+      errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values(2) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
+
+      PrintToFile(errors.toString(), "results_pgaFunctionalityWithCtg.txt")
+
+      fail(8).value = true
+    }
+
+    res
+  }
+
   def readChannels(): Array[Long] = {
 
     val buf0 = Array.ofDim[Byte](1024 * 4)
@@ -1037,6 +1085,79 @@ object ProbeTestController {
     res
   }
 
+  def RunInputBufferFunctionalityTestWithCtg(): Boolean = {
+
+    DivideClockForOutput()
+
+    Reset()
+    InitializeAdc()
+
+    val map0 = Map(
+      0 -> 0x0333,
+      1 -> 0x0233,
+      2 -> 0x0000,
+      3 -> 0x0210,
+      4 -> 0x0210,
+      5 -> 0x0017,
+      6 -> 0x0066
+    )
+
+    SetAdcBlock(21, map0)
+    SetAdcBlock(82, map0)
+
+    val values0 = readChannels()
+
+    val map1 = Map(
+      0 -> 0x03ff,
+      1 -> 0x0233,
+      2 -> 0x0000,
+      3 -> 0x0000,
+      4 -> 0x0000,
+      5 -> 0x0014,
+      6 -> 0x0006
+    )
+
+    SetAdcBlock(21, map1)
+    SetAdcBlock(82, map1)
+
+    val values1 = readChannels()
+
+    val margin = 700
+
+    val res = within(values0(0), 4812, margin) &&
+      within(values0(1), 11571, margin) &&
+      within(values0(2), 11571, margin) &&
+      within(values0(3), 4812, margin) &&
+      within(values1(0), 3123, margin) &&
+      within(values1(1), 13260, margin) &&
+      within(values1(2), 13260, margin) &&
+      within(values1(3), 3123, margin)
+
+    if (res) pass(9).value = true else {
+      val errors = new mutable.StringBuilder()
+
+      errors ++= "Stage 1:\n"
+
+      errors ++= "Channel 0 -> Observed: " + values0(0) + " Expected: " + 4812 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values0(1) + " Expected: " + 11571 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values0(2) + " Expected: " + 11571 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values0(3) + " Expected: " + 4812 + " with margin " + margin + "\n"
+
+      errors ++= "Stage 2:\n"
+
+      errors ++= "Channel 0 -> Observed: " + values1(0) + " Expected: " + 3123 + " with margin " + margin + "\n"
+      errors ++= "Channel 1 -> Observed: " + values1(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 2 -> Observed: " + values1(2) + " Expected: " + 13260 + " with margin " + margin + "\n"
+      errors ++= "Channel 3 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
+
+      PrintToFile(errors.toString(), "results_inputBuffer.txt")
+
+      fail(9).value = true
+    }
+
+    res
+  }
+
   def RunPgaGainTest(): Boolean = {
 
     DivideClockForOutput()
@@ -1046,6 +1167,72 @@ object ProbeTestController {
 
     val map = Map(
       0 -> 0x003c,
+      1 -> 0x0233,
+      2 -> 0x001e,
+      3 -> 0x0042,
+      4 -> 0x0042,
+      5 -> 0x003c,
+      6 -> 0x0006
+    )
+
+    SetAdcBlock(21, map)
+    SetAdcBlock(82, map)
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5623).Execute()
+    val values0 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x58ba).Execute()
+    val values1 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5b79).Execute()
+    val values2 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(26, 0x0014).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(87, 0x0014).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5623).Execute()
+    val values3 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x58ba).Execute()
+    val values4 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5b79).Execute()
+    val values5 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(26, 0x0000).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(87, 0x0000).Execute()
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5623).Execute()
+    val values6 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x58ba).Execute()
+    val values7 = readChannels()
+
+    commandFactory.MakeWriteToAsicMemoryTopCommand(80, 0x5b79).Execute()
+    val values8 = readChannels()
+
+    val res = values0.filter(!within(_, 6182, 300)).isEmpty &&
+      values1.filter(!within(_, 8192, 300)).isEmpty &&
+      values2.filter(!within(_, 10311, 300)).isEmpty &&
+      values3.filter(!within(_, 5177, 300)).isEmpty &&
+      values4.filter(!within(_, 8192, 300)).isEmpty &&
+      values5.filter(!within(_, 11371, 300)).isEmpty &&
+      values6.filter(!within(_, 4172, 300)).isEmpty &&
+      values7.filter(!within(_, 8192, 300)).isEmpty &&
+      values8.filter(!within(_, 12431, 300)).isEmpty
+
+    if (res) pass(10).value = true else fail(10).value = true
+
+    res
+  }
+
+  def RunPgaGainTestWithCtg(): Boolean = {
+
+    DivideClockForOutput()
+
+    Reset()
+    InitializeAdc()
+
+    val map = Map(
+      0 -> 0x03ff,
       1 -> 0x0233,
       2 -> 0x001e,
       3 -> 0x0042,
@@ -1201,6 +1388,89 @@ object ProbeTestController {
     adc0errors + adc1errors + adc2errors + adc3errors == 0
   }
 
+  def RunAdcLinearityTestWithCtg(): Boolean = {
+
+    DivideClockForOutput()
+
+    Reset()
+    InitializeAdc()
+
+    val map = Map(
+      0 -> 0x03ff,
+      1 -> 0x0233,
+      2 -> 0x001e,
+      3 -> 0x0042,
+      4 -> 0x0042,
+      5 -> 0x0000,
+      6 -> 0x0006
+    )
+
+    SetAdcBlock(21, map)
+    SetAdcBlock(82, map)
+
+    val adc0 = new mutable.HashMap[Int, Double]
+    val adc1 = new mutable.HashMap[Int, Double]
+    val adc2 = new mutable.HashMap[Int, Double]
+    val adc3 = new mutable.HashMap[Int, Double]
+
+    val zambo = new mutable.StringBuilder()
+
+    for (i <- 0x314 until 0xe88 by 10) {
+      val output = adcOutput(i)
+      zambo ++= i + " -> " + output + "\n"
+      adc0 += i -> output._1
+      adc1 += i -> output._2
+      adc2 += i -> output._3
+      adc3 += i -> output._4
+    }
+
+    PrintToFile(zambo.toString(), "results_sweep.txt")
+
+    val adc0Map = adc0.toMap
+    val adc1Map = adc1.toMap
+    val adc2Map = adc2.toMap
+    val adc3Map = adc3.toMap
+
+    var k = 0x30a
+
+    val refs = (for (line <- Source.fromFile(sweepReferenceFilePath.value).getLines()) yield {
+      k = k + 10
+      k -> line.toDouble
+    }).toMap
+
+    var adc0errors = 0
+    var adc1errors = 0
+    var adc2errors = 0
+    var adc3errors = 0
+
+    val errors = new mutable.StringBuilder()
+
+    for (k <- 0x314 until 0xe88 by 10) {
+      if (!within(adc0Map(k), refs(k), 150)) {
+        adc0errors += 1
+        errors ++= "Channel 0: " + k + " -> Read: " + adc0Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
+      }
+      if (!within(adc1Map(k), refs(k), 150)) {
+        adc1errors += 1
+        errors ++= "Channel 1: " + k + " -> Read: " + adc1Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
+      }
+      if (!within(adc2Map(k), refs(k), 150)) {
+        adc2errors += 1
+        errors ++= "Channel 2: " + k + " -> Read: " + adc2Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
+      }
+      if (!within(adc3Map(k), refs(k), 150)) {
+        adc3errors += 1
+        errors ++= "Channel 3: " + k + " -> Read: " + adc3Map(k) + " Reference: " + refs(k) + " with margin " + 150 + "\n"
+      }
+    }
+
+    PrintToFile(errors.toString(), "results_linearityErrorsCtg.txt")
+
+    if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
+
+    adc0errors + adc1errors + adc2errors + adc3errors == 0
+  }
+
   def RunAdcNoiseTest(): Boolean = {
 
     DivideClockForOutput()
@@ -1265,11 +1535,11 @@ object ProbeTestController {
 
     PrintToFile(zambo.toString(), "results_noise.txt")
 
-    (new AdcNoiseTestResult(
+    new AdcNoiseTestResult(
       pas,
       values1(0).stdev, values0(1).stdev, values0(2).stdev, values1(3).stdev,
       values1(0).mean, values0(1).mean, values0(2).mean, values1(3).mean
-    )).pass
+    ).pass
   }
 
   def DivideClockForOutput(): Unit = {
