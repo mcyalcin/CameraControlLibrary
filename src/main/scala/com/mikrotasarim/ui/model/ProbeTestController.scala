@@ -27,7 +27,7 @@ object ProbeTestController {
     }
   }
 
-  def testCases = ObservableBuffer(
+  val testCases = ObservableBuffer(
     new TestCase("1. Current Test", RunCurrentTest),
     new TestCase("2. Serial Interface Test", RunSerialInterfaceTest),
     new TestCase("3. Memory Test", RunAsicMemoryToggleTest),
@@ -38,12 +38,9 @@ object ProbeTestController {
     new TestCase("7b. ADC Functionality Test with CTG", RunAdcFunctionalityTestWithCtg),
     new TestCase("8a. PGA Functionality Test with TG", RunPgaFunctionalityTest),
     new TestCase("8b. PGA Functionality Test with CTG", RunPgaFunctionalityTestWithCtg),
-    new TestCase("9a. Input Buffer Test with TG", RunInputBufferFunctionalityTest),
-    new TestCase("9b. Input Buffer Test with CTG", RunInputBufferFunctionalityTestWithCtg),
-    new TestCase("10a. PGA Gain Test with TG", RunPgaGainTest),
-    new TestCase("10b. PGA Gain Test with CTG", RunPgaGainTestWithCtg),
-    new TestCase("11a. ADC Channel Linearity Test with TG", RunAdcLinearityTest),
-    new TestCase("11b. ADC Channel Linearity Test with CTG", RunAdcLinearityTestWithCtg),
+    new TestCase("9. Input Buffer Test with TG", RunInputBufferFunctionalityTest),
+    new TestCase("10. PGA Gain Test with TG", RunPgaGainTest),
+    new TestCase("11. ADC Channel Linearity Test with TG", RunAdcLinearityTest),
     new TestCase("12. ADC Channel Noise Test", RunAdcNoiseTest),
     new TestCase("13. ROIC Memory Test", RunRoicInterfaceTest)
   )
@@ -63,57 +60,6 @@ object ProbeTestController {
     case 12 => RunAdcNoiseTest()
     case 13 => RunRoicInterfaceTest()
   }
-
-  val labels = Array(
-    "0.",
-    "1. Current Test",
-    "2. Serial Interface Test",
-    "3. Memory Test",
-    "4. Power Consumption Test",
-    "5. Flash Memory Test",
-    "6. Output Stage Test",
-    "7. ADC Functionality Test",
-    "8. PGA Functionality Test",
-    "9. Input Buffer Test",
-    "10. PGA Gain Test",
-    "11. ADC Channel Linearity Test",
-    "12. ADC Channel Noise Test",
-    "13. Roic Memory Test"
-  )
-
-  val pass = ObservableBuffer(
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false)
-  )
-
-  val fail = ObservableBuffer(
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false),
-    BooleanProperty(value = false)
-  )
 
   val comment = StringProperty("")
 
@@ -178,7 +124,7 @@ object ProbeTestController {
     Thread.sleep(4000)
     DeployBitfile()
     Thread.sleep(100)
-    for (i <- 1 to 13) RunTest(i)
+    for (testCase <- testCases) testCase.Run()
   }
 
   def using[A <: {def close() : Unit}, B](resource: A)(f: A => B): B =
@@ -204,8 +150,8 @@ object ProbeTestController {
     output ++= "Date: " + format.format(new java.util.Date()) + "\n"
     var pas = true
 
-    for (i <- 1 to 13) {
-      if (!pass(i).value) pas = false
+    for (testCase <- testCases) {
+      if (!testCase.pass.value) pas = false
     }
 
     output ++= "Status: "
@@ -214,9 +160,9 @@ object ProbeTestController {
 
     if (!pas) {
       output ++= "Results: \n"
-      for (i <- 1 to 13) {
-        output ++= "Test " + i + ": "
-        if (!pass(i).value) output ++= "Fail\n" else output ++= "Pass\n"
+      for (testCase <- testCases) {
+        output ++= "Test " + testCase.label + " -> "
+        if (!testCase.pass.value) output ++= "Fail\n" else output ++= "Pass\n"
       }
     }
 
@@ -227,8 +173,8 @@ object ProbeTestController {
 
     writeStringToFile(new File(outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value + "/dieSummary.txt"), output.toString())
 
-    for (i <- 1 to 13) {
-      pass(i).value = false; fail(i).value = false
+    for (testCase <- testCases) {
+      testCase.pass.value = false; testCase.fail.value = false
     }
 
     outputOff()
@@ -349,10 +295,7 @@ object ProbeTestController {
         }
     }
 
-    if (errors.isEmpty) pass(3).value = true
-    else {
-      fail(3).value = true
-
+    if (errors.nonEmpty) {
       val output = new mutable.StringBuilder()
 
       for (error <- errors) {
@@ -438,8 +381,6 @@ object ProbeTestController {
     val min = 0.200
     val max = 0.230
 
-    if (value < max && value > min) pass(1).value = true else fail(1).value = true
-
     value < max && value > min
   }
 
@@ -453,8 +394,6 @@ object ProbeTestController {
 
     commandFactory.MakeWriteToAsicMemoryTopCommand(0x59, 0xaaaa).Execute()
     commandFactory.MakeReadFromAsicMemoryTopCommand(0x59, (value) => pas = value == 0xaaaa).Execute()
-
-    if (pas) pass(2).value = true else fail(2).value = true
 
     pas
   }
@@ -528,8 +467,6 @@ object ProbeTestController {
       lvds7Current
     )
 
-    if (res.pass) pass(4).value = true else fail(4).value = true
-
     val folder = outputPath.value + "/" + waferId.value + "/Die" + dieNumber.value
     val folderPath: Path = Path.fromString(folder)
     if (!folderPath.exists) folderPath.createDirectory()
@@ -578,17 +515,13 @@ object ProbeTestController {
 
     for (i <- 0 to 255) if ((output1(i) + 256) % 256 != 255) {
       println("Failed index: " + i)
-      fail(5).value = true
       return false
     }
 
     for (i <- 0 to 255) if ((output(i) + 256) % 256 != (testData(i) + 256) % 256) {
       println("Failed index: " + i)
-      fail(5).value = true
       return false
     }
-
-    pass(5).value = true
 
     true
   }
@@ -616,8 +549,6 @@ object ProbeTestController {
     DeployBitfile()
     Thread.sleep(100)
     Reset()
-
-    if (pas) pass(13).value = true else fail(13).value = true
 
     pas
   }
@@ -789,8 +720,7 @@ object ProbeTestController {
       errors ++= "Channel 3 -> Observed: " + values7(3) + " Expected: " + 1432 + " with margin 700\n"
     }
 
-    if (result) pass(6).value = true else {
-      fail(6).value = true
+    if (!result) {
       PrintToFile(errors.toString(), "results_outputStageErrors.txt")
     }
 
@@ -845,8 +775,6 @@ object ProbeTestController {
       within(values(2), 11571, 500) &&
       within(values(3), 4812, 500)
 
-    if (res) pass(7).value = true else fail(7).value = true
-
     res
   }
 
@@ -876,8 +804,6 @@ object ProbeTestController {
       within(values(1), 11571, 500) &&
       within(values(2), 11571, 500) &&
       within(values(3), 4812, 500)
-
-    if (res) pass(7).value = true else fail(7).value = true
 
     res
   }
@@ -911,7 +837,7 @@ object ProbeTestController {
       within(values(2), 13260, margin) &&
       within(values(3), 3123, margin)
 
-    if (res) pass(8).value = true else {
+    if (!res) {
       val errors = new mutable.StringBuilder()
       errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin " + margin + "\n"
       errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
@@ -919,8 +845,6 @@ object ProbeTestController {
       errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
       PrintToFile(errors.toString(), "results_pgaFunctionality.txt")
-
-      fail(8).value = true
     }
 
     res
@@ -955,7 +879,7 @@ object ProbeTestController {
       within(values(2), 13260, margin) &&
       within(values(3), 3123, margin)
 
-    if (res) pass(8).value = true else {
+    if (!res) {
       val errors = new mutable.StringBuilder()
       errors ++= "Channel 0 -> Observed: " + values(0) + " Expected: " + 3213 + " with margin " + margin + "\n"
       errors ++= "Channel 1 -> Observed: " + values(1) + " Expected: " + 13260 + " with margin " + margin + "\n"
@@ -963,8 +887,6 @@ object ProbeTestController {
       errors ++= "Channel 3 -> Observed: " + values(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
       PrintToFile(errors.toString(), "results_pgaFunctionalityWithCtg.txt")
-
-      fail(8).value = true
     }
 
     res
@@ -1060,7 +982,7 @@ object ProbeTestController {
       within(values1(2), 13260, margin) &&
       within(values1(3), 3123, margin)
 
-    if (res) pass(9).value = true else {
+    if (!res) {
       val errors = new mutable.StringBuilder()
 
       errors ++= "Stage 1:\n"
@@ -1078,8 +1000,6 @@ object ProbeTestController {
       errors ++= "Channel 3 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
       PrintToFile(errors.toString(), "results_inputBuffer.txt")
-
-      fail(9).value = true
     }
 
     res
@@ -1133,7 +1053,7 @@ object ProbeTestController {
       within(values1(2), 13260, margin) &&
       within(values1(3), 3123, margin)
 
-    if (res) pass(9).value = true else {
+    if (!res) {
       val errors = new mutable.StringBuilder()
 
       errors ++= "Stage 1:\n"
@@ -1151,8 +1071,6 @@ object ProbeTestController {
       errors ++= "Channel 3 -> Observed: " + values1(3) + " Expected: " + 3123 + " with margin " + margin + "\n"
 
       PrintToFile(errors.toString(), "results_inputBuffer.txt")
-
-      fail(9).value = true
     }
 
     res
@@ -1219,8 +1137,6 @@ object ProbeTestController {
       values7.filter(!within(_, 8192, 300)).isEmpty &&
       values8.filter(!within(_, 12431, 300)).isEmpty
 
-    if (res) pass(10).value = true else fail(10).value = true
-
     res
   }
 
@@ -1284,8 +1200,6 @@ object ProbeTestController {
       values6.filter(!within(_, 4172, 300)).isEmpty &&
       values7.filter(!within(_, 8192, 300)).isEmpty &&
       values8.filter(!within(_, 12431, 300)).isEmpty
-
-    if (res) pass(10).value = true else fail(10).value = true
 
     res
   }
@@ -1383,8 +1297,6 @@ object ProbeTestController {
 
     PrintToFile(errors.toString(), "results_linearityErrors.txt")
 
-    if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
-
     adc0errors + adc1errors + adc2errors + adc3errors == 0
   }
 
@@ -1466,8 +1378,6 @@ object ProbeTestController {
 
     PrintToFile(errors.toString(), "results_linearityErrorsCtg.txt")
 
-    if (adc0errors + adc1errors + adc2errors + adc3errors == 0) pass(11).value = true else fail(11).value = true
-
     adc0errors + adc1errors + adc2errors + adc3errors == 0
   }
 
@@ -1523,8 +1433,6 @@ object ProbeTestController {
         values0(1).stdev < 5 &&
         values0(2).stdev < 5 &&
         values1(3).stdev < 5
-
-    if (pas) pass(12).value = true else fail(12).value = true
 
     val zambo = new mutable.StringBuilder()
 

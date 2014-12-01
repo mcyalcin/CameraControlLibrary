@@ -14,7 +14,7 @@ import scalafx.stage.{FileChooser, Stage}
 object MtAs1410x2ProbeTestStage extends Stage {
 
   width = 800
-  height = 600
+  height = 800
   title = "MTAS1410X2 Probe Test"
   scene = new Scene() {
     root = new ScrollPane {
@@ -138,21 +138,6 @@ object MtAs1410x2ProbeTestStage extends Stage {
       new Button("Run") {
         onAction = handle {
           testCase.Run()
-        }
-      }
-    )
-  }
-
-  private def createTestControl(i: Int): Node = new HBox {
-    spacing = 10
-    content = List(
-      new Label(ProbeTestController.labels(i)) {
-        prefWidth = 220
-      },
-      passFailControl(ProbeTestController.pass(i), ProbeTestController.fail(i)),
-      new Button("Run") {
-        onAction = handle {
-          ProbeTestController.RunTest(i)
         }
       }
     )
