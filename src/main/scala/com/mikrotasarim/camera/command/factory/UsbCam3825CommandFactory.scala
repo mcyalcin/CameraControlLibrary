@@ -9,10 +9,8 @@ import scala.language.reflectiveCalls
 import scala.collection.immutable.IndexedSeq
 
 class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Constants {
-  def ChangeSpeedFactor(factor: Int): Unit = {
-
-    // TODO: Correct this.
-    MakeSetWireInValueCommand(0x7, if (factor == 1) 0 else if (factor == 2) 1 else 2).Execute()
+  def ChangeClockSpeedFactor(factor: Int): Unit = {
+    MakeSetWireInValueCommand(0x7, (math.log(factor)/math.log(2)).toInt).Execute()
     MakeUpdateWireInsCommand().Execute()
     MakeActivateTriggerInCommand(0x40, 0).Execute()
   }

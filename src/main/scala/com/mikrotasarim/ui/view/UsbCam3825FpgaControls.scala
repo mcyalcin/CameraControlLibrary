@@ -30,9 +30,33 @@ object UsbCam3825FpgaControls {
           createResetControls,
           createFvalDvalSelector,
           createChannelControls,
-          createCameraFeedButton
+          createDelayModuleControls
+//          createCameraFeedButton
         )
       }
+    }
+  }
+
+  private def createDelayModuleControls: Node = {
+    new HBox {
+      spacing = 10
+      disable <== !bitfileDeployed
+      content = List(
+        new CheckBox("inc") {
+          selected <==> DelayControls.inc
+        },
+        new CheckBox("rst") {
+          selected <==> DelayControls.rst
+        },
+        new CheckBox("cal") {
+          selected <==> DelayControls.cal
+        },
+        new Button("c_en") {
+          onAction = handle {
+            DelayControls.cen()
+          }
+        }
+      )
     }
   }
 

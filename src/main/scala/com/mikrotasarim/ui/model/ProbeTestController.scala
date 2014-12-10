@@ -247,7 +247,7 @@ object ProbeTestController {
 
   def RunAsicMemoryToggleTest(): Boolean = {
 
-    commandFactory.ChangeSpeedFactor(4)
+    commandFactory.ChangeClockSpeedFactor(4)
 
     Reset()
 
@@ -371,7 +371,7 @@ object ProbeTestController {
 
   def RunCurrentTest(): Boolean = {
 
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(2)
 
     Reset()
 
@@ -386,7 +386,7 @@ object ProbeTestController {
 
   def RunSerialInterfaceTest(): Boolean = {
 
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(2)
 
     Reset()
 
@@ -400,7 +400,7 @@ object ProbeTestController {
 
   def RunPowerConsumptionTest(): Boolean = {
 
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(2)
 
     Reset()
 
@@ -495,7 +495,7 @@ object ProbeTestController {
 
   def RunFlashInterfaceTest(): Boolean = {
 
-    commandFactory.ChangeSpeedFactor(1)
+    commandFactory.ChangeClockSpeedFactor(1)
 
     Reset()
 
@@ -534,7 +534,7 @@ object ProbeTestController {
 
     DeployAtfile()
 
-    DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+    DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(2)
 
     Reset()
 
@@ -1452,9 +1452,9 @@ object ProbeTestController {
 
   def DivideClockForOutput(): Unit = {
     if (selectedAdcConfig.value == "1.5 MHz") {
-      DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(2)
+      DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(2)
     } else {
-      DeviceInterfaceModel.commandFactory.ChangeSpeedFactor(1)
+      DeviceInterfaceModel.commandFactory.ChangeClockSpeedFactor(1)
     }
   }
 

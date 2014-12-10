@@ -13,3 +13,4 @@ out
 tags
 .*.swp
 .*.swo
+*.log

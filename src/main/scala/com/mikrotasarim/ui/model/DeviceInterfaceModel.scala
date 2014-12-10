@@ -57,6 +57,20 @@ object DeviceInterfaceModel {
     })
   }
 
+  object DelayControls {
+    val inc = BooleanProperty(value = false)
+    val rst = BooleanProperty(value = false)
+    val cal = BooleanProperty(value = false)
+
+    inc.onChange(commandFactory.device.SetWireInValue(7, if (inc.value) 16 else 0, 16))
+    rst.onChange(commandFactory.device.SetWireInValue(7, if (rst.value) 32 else 0, 32))
+    cal.onChange(commandFactory.device.SetWireInValue(7, if (cal.value) 64 else 0, 64))
+
+    def cen(): Unit = {
+      commandFactory.device.ActivateTriggerIn(0x42, 0)
+    }
+  }
+
   object ChannelControls {
     val channelEnabled = List(
       BooleanProperty(value = false),
@@ -148,7 +162,7 @@ object DeviceInterfaceModel {
   val speedFactors = ObservableBuffer("1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096")
   val selectedSpeedFactor = StringProperty("1")
 
-  selectedSpeedFactor.onChange(commandFactory.ChangeSpeedFactor(selectedSpeedFactor.value.toInt))
+  selectedSpeedFactor.onChange(commandFactory.ChangeClockSpeedFactor(selectedSpeedFactor.value.toInt))
 
   trait MemoryLocation {
     val address: Int
