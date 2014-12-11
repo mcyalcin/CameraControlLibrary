@@ -10,7 +10,7 @@ import scala.collection.immutable.IndexedSeq
 
 class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Constants {
   def ChangeClockSpeedFactor(factor: Int): Unit = {
-    MakeSetWireInValueCommand(0x7, (math.log(factor)/math.log(2)).toInt).Execute()
+    MakeSetWireInValueCommand(0x7, (math.log(factor)/math.log(2)).round).Execute()
     MakeUpdateWireInsCommand().Execute()
     MakeActivateTriggerInCommand(0x40, 0).Execute()
   }
