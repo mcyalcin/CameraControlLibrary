@@ -156,6 +156,20 @@ class UsbCam3825CommandFactory(val device: DeviceInterface) extends UsbCam3825Co
     ((b0 + 256) % 256) + ((b1 + 256) % 256) * 256l + ((b2 + 256) % 256) * 256l * 256l + ((b3 + 256) % 256) * 256l * 256l * 256l
   }
 
+  def ReadChannelOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean, radix: Int, channel: Int): Unit = {
+    val buf = Array.ofDim[Byte](length)
+    device.ReadFromBlockPipeOut(channel, 64, buf)
+    val file = new File(filename)
+    val stringBuilder = new StringBuilder
+    for (i <- 0 until length by 4) {
+      val word = bytesToWord(buf(i), buf(i + 1), if (sixteenBitMode) 0 else buf(i + 2), if (sixteenBitMode) 0 else buf(i + 3))
+      val string =  word.toBinaryString takeRight (if (sixteenBitMode) 16 else 32)
+      stringBuilder.append(string)
+      stringBuilder.append("\n")
+    }
+    writeStringToFile(file, stringBuilder.toString())
+  }
+
   // TODO: Divide this functionality, or replace altogether.
   def ReadOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean, radix: Int): Unit = {
 
@@ -634,6 +648,7 @@ trait UsbCam3825Constants {
   val DigitalOutputPipe1 = 0xa2
   val DigitalOutputPipe2 = 0xa3
   val DigitalOutputPipe3 = 0xa4
+  val TestPipe = 0xa5
 
   // Test Commands
   val SweepTestEnable = 2147483648l

@@ -35,6 +35,10 @@ object UsbCam3825TestUtility extends JFXApp {
   private def createReadOutputControl: Node = new VBox {
     spacing = 10
     content = List(
+      new Label("Save Channel Output"),
+      new ChoiceBox(DeviceInterfaceModel.channelOptions) {
+        value <==> DeviceInterfaceModel.selectedChannel
+      },
       new TextField {
         promptText = "File path"
         text <==> DeviceInterfaceModel.outFilePath
@@ -83,7 +87,9 @@ object UsbCam3825TestUtility extends JFXApp {
                     MtAs1410x2MemoryMapStage.show()
                   }
                 },
+                new Separator,
                 createReadOutputControl,
+                new Separator,
                 new Button("Probe Test") {
                   onAction = () => {
                     MtAs1410x2ProbeTestStage.show()

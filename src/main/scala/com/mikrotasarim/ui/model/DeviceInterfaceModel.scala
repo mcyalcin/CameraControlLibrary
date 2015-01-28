@@ -100,6 +100,16 @@ object DeviceInterfaceModel {
   val sampleCount = StringProperty("")
   val sixteenBitMode = BooleanProperty(value = false)
 
+  val channelOptions = ObservableBuffer("All Channels", "Channel 0", "Channel 1", "Channel 2", "Channel 3", "Test Channel")
+  val selectedChannel = StringProperty("All Channels")
+  val channelMappings = Map(
+    "Channel 0" -> 0xa1,
+    "Channel 1" -> 0xa2,
+    "Channel 2" -> 0xa3,
+    "Channel 3" -> 0xa4,
+    "Test Channel" -> 0xa5
+  )
+
   val outputFormatOptions = ObservableBuffer("Binary", "Decimal", "Hexadecimal")
   val selectedOutputFormat = StringProperty("Decimal")
 
@@ -109,7 +119,16 @@ object DeviceInterfaceModel {
 
   def ReadOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean): Unit = {
     val radix = if (selectedOutputFormat.value == "Binary") 2 else if (selectedOutputFormat.value == "Decimal") 10 else 16
-    commandFactory.ReadOutputIntoFile(length, filename, sixteenBitMode, radix)
+    if (selectedChannel.value.equals("All Channels")) {
+      commandFactory.ReadOutputIntoFile(length, filename, sixteenBitMode, radix)
+    } else {
+      commandFactory.ReadChannelOutputIntoFile(length, filename, sixteenBitMode, radix, channelMappings(selectedChannel.value))
+    }
+  }
+
+  def ReadOutputIntoFile(length: Int, filename: String, sixteenBitMode: Boolean, channel: Int): Unit = {
+    val radix = if (selectedOutputFormat.value == "Binary") 2 else if (selectedOutputFormat.value == "Decimal") 10 else 16
+    commandFactory.ReadChannelOutputIntoFile(length, filename, sixteenBitMode, radix, channel)
   }
 
   val dacSweepTest1OutFilePath = StringProperty("")
