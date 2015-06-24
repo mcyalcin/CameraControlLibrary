@@ -4,6 +4,15 @@ version := "1.0"
 
 scalaVersion := "2.11.0"
 
+unmanagedBase := baseDirectory.value / "lib"
+
+unmanagedJars in Compile ++= {
+  val base = baseDirectory.value
+  val baseDirectories = base / "lib"
+  val customJars = baseDirectories ** "*.jar"
+  customJars.classpath
+}
+
 libraryDependencies ++= Seq(
   "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
   "org.scalafx" %% "scalafx" % "1.0.0-R8",
