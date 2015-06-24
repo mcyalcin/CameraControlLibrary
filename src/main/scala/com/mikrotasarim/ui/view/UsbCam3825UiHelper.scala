@@ -31,7 +31,7 @@ object UsbCam3825UiHelper {
         },
         new Label {
           text <== (dac.value.asString(format) + " " + unitLabel)
-          prefWidth = 50
+          prefWidth = 60
         },
         new Button("Reset") {
           onAction = () => dac.Reset()

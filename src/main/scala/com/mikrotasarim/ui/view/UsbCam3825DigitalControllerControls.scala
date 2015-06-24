@@ -17,7 +17,7 @@ object UsbCam3825DigitalControllerControls {
   def createDigitalControllerTab = new HBox {
     padding = Insets(10)
     spacing = 20
-    content = List(createOtherControls, createDriveControls)
+    content = List(createDriveControls)
   }
 
   private def createOtherControls = new VBox {
@@ -65,8 +65,9 @@ object UsbCam3825DigitalControllerControls {
   }
 
   private def createDriveControls = new VBox {
-    spacing = 5
-    content = Label("Drive Pad Strengths") +: digitalController.digPadDrives.map(createDriveControl)
+    spacing = 10
+    content = List(Label("Drive Pad Strengths"), createCheckBoxes) ++
+      digitalController.digPadDrives.map(createDriveControl)
   }
 
   private def createDriveControl(drive: DigPadDrive): Node = {

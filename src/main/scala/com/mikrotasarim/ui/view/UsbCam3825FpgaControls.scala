@@ -2,7 +2,6 @@ package com.mikrotasarim.ui.view
 
 import com.mikrotasarim.ui.model.DeviceInterfaceModel._
 import com.mikrotasarim.ui.view.UsbCam3825TestUtility._
-import com.mikrotasarim.ui.view.UsbCam3825UiHelper._
 import com.mikrotasarim.utility.DialogMessageStage
 
 import scalafx.Includes._
@@ -26,93 +25,9 @@ object UsbCam3825FpgaControls {
             tooltip = "On test mode, software works with a mock device interface instead of an actual device"
           },
           createSelectBitfileHBox,
-          createSelectAlternateBitfileHBox,
-          createResetControls,
-          createFvalDvalSelector,
-          createChannelControls,
-          createDelayModuleControls
-//          createCameraFeedButton
+          createResetControls
         )
       }
-    }
-  }
-
-  private def createDelayModuleControls: Node = {
-    new HBox {
-      spacing = 10
-      disable <== !bitfileDeployed
-      content = List(
-        new CheckBox("inc") {
-          selected <==> DelayControls.inc
-        },
-        new CheckBox("rst") {
-          selected <==> DelayControls.rst
-        },
-        new CheckBox("cal") {
-          selected <==> DelayControls.cal
-        },
-        new Button("c_en") {
-          onAction = handle {
-            DelayControls.cen()
-          }
-        }
-      )
-    }
-  }
-
-  private def createChannelControls: Node = {
-    new HBox {
-      spacing = 10
-      disable <== !bitfileDeployed
-      content =
-        (for (i <- 0 to 3) yield createChannelCheckBox(i)).toList :+
-        new CheckBox("Test Feed on Channels") {
-          selected <==> ChannelControls.testFeedEnabled
-        } :+
-        new CheckBox("Dac Sweep Test Feed on Channels") {
-          selected <==> ChannelControls.sweepTestFeedEnabled
-        } :+
-        new Button("Read") {
-          onAction = handle {
-            ReadDigitalOutputChunk()
-          }
-        }
-    }
-  }
-
-  private def createChannelCheckBox(index: Int): Node = {
-    new CheckBox("Channel " + index) {
-      selected <==> ChannelControls.channelEnabled(index)
-    }
-  }
-
-  private def createCameraFeedButton: Node = {
-    new Button("Camera Feed") {
-      tooltip = "Not implemented yet."
-      disable = true
-      onAction = handle {
-        VideoFeedStage.show()
-      }
-    }
-  }
-
-  private def createFvalDvalSelector: Node = {
-    new HBox {
-      disable <== !bitfileDeployed
-      spacing = 10
-      content = List(
-        createLabeledBooleanDropdown("Dval/Fval", embeddedAsicLabels, embeddedDvalFval),
-        new VBox {
-          prefWidth = 80
-          spacing = 5
-          content = List(
-            new Label("Clock Speed Factor"),
-            new ChoiceBox(speedFactors) {
-              value <==> selectedSpeedFactor
-            }
-          )
-        }
-      )
     }
   }
 
@@ -142,25 +57,6 @@ object UsbCam3825FpgaControls {
         createDeployBitfileButton,
         createDisconnectFromFpgaButton
       )
-    }
-  }
-
-  private def createSelectAlternateBitfileHBox: HBox = {
-    new HBox {
-      spacing = 10
-      content = List(
-        createSelectAlternateBitfileButton,
-        createAlternateTextField
-      )
-    }
-  }
-
-  private def createAlternateTextField: TextField = {
-    new TextField {
-      prefColumnCount = 40
-      promptText = "Enter bitfile path"
-      text <==> alternateBitfilePath
-      disable <== bitfileDeployed
     }
   }
 
@@ -218,21 +114,4 @@ object UsbCam3825FpgaControls {
     }
   }
 
-  private def createSelectAlternateBitfileButton: Button = {
-    new Button("Select Atfile") {
-      id = "selectBitfileButton"
-      disable <== bitfileDeployed
-      onAction = handle {
-        val fileChooser = new FileChooser() {
-          title = "Pick an FPGA Bitfile"
-        }
-
-        val alternateBitfile = fileChooser.showOpenDialog(stage)
-
-        if (alternateBitfile != null) {
-          alternateBitfilePath.value = alternateBitfile.getAbsolutePath
-        }
-      }
-    }
-  }
 }

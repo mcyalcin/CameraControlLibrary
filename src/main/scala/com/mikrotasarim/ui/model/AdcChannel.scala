@@ -385,14 +385,14 @@ class AdcChannelInputDriveControls(override val address: Int) extends MemoryLoca
     new BooleanProperty(this, "pdn0", false),
     new BooleanProperty(this, "pdn1", false)
   )
-  pdn(0).onChange(CommitMemoryLocation(this))
+  pdn.head.onChange(CommitMemoryLocation(this))
   pdn(1).onChange(CommitMemoryLocation(this))
 
   val pdp = List(
     new BooleanProperty(this, "pdp0", false),
     new BooleanProperty(this, "pdp1", false)
   )
-  pdp(0).onChange(CommitMemoryLocation(this))
+  pdp.head.onChange(CommitMemoryLocation(this))
   pdp(1).onChange(CommitMemoryLocation(this))
 
   val shortRefEnable = new BooleanProperty(this, "sre", false)
@@ -412,9 +412,9 @@ class AdcChannelInputDriveControls(override val address: Int) extends MemoryLoca
   def memoryValue =
     bwPredrv.value * (2 pow 5) +
       (if (pdn(1).value) 2 pow 4 else 0) +
-      (if (pdn(0).value) 2 pow 3 else 0) +
+      (if (pdn.head.value) 2 pow 3 else 0) +
       (if (pdp(1).value) 2 pow 2 else 0) +
-      (if (pdp(0).value) 2 else 0) +
+      (if (pdp.head.value) 2 else 0) +
       (if (shortRefEnable.value) 1 else 0)
 }
 
@@ -536,6 +536,137 @@ class AdcChannelMode(override val address: Int) extends MemoryLocation {
 }
 
 class AdcChannelSettings(baseAddress: Int) {
+  val powerDown = ObservableBuffer(
+    BooleanProperty(value = false),
+    BooleanProperty(value = false)
+  )
+  val selectedMode = ObservableBuffer(
+    StringProperty("PAD - PGA - ADC"),
+    StringProperty("PAD - PGA - ADC")
+  )
+
+  powerDown(0).onChange(handlePowerDownChange(0))
+  powerDown(1).onChange(handlePowerDownChange(1))
+  selectedMode(0).onChange(handleModeChange(0))
+  selectedMode(1).onChange(handleModeChange(1))
+
+  def handlePowerDownChange(index: Int): Unit = {
+    if (powerDown(index).value) {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(false)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(false)
+      clockSettings.enClkMode(index).set(false)
+      inputDriveControls.pdn(index).set(true)
+      inputDriveControls.pdp(index).set(true)
+      pgaSettings.pdPga(index).set(true)
+      miscControls.pdAdc(index).set(true)
+      miscControls.pdAdcRefDrv(index).set(true)
+      miscControls.pdPgaRefDrv(index).set(true)
+      miscControls.rstbDigCor(index).set(false)
+    } else {
+      handleModeChange(index)
+    }
+  }
+
+  def handleModeChange(index: Int): Unit = {
+    val sm = selectedMode(index).value
+    if (sm == "PAD - PGA - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(true)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(true)
+      inputDriveControls.pdp(index).set(true)
+      pgaSettings.pdPga(index).set(false)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(false)
+      miscControls.rstbDigCor(index).set(true)
+    } else if (sm == "PAD - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(false)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(true)
+      inputDriveControls.pdp(index).set(true)
+      pgaSettings.pdPga(index).set(true)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(true)
+      miscControls.rstbDigCor(index).set(true)
+    } else if (sm == "PAD - Input Buffer - PGA - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(true)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(false)
+      inputDriveControls.pdp(index).set(false)
+      pgaSettings.pdPga(index).set(false)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(false)
+      miscControls.rstbDigCor(index).set(true)
+    } else if (sm == "PAD - Input Buffer - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(false)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(false)
+      inputDriveControls.pdp(index).set(false)
+      pgaSettings.pdPga(index).set(true)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(true)
+      miscControls.rstbDigCor(index).set(true)
+    } else if (sm == "Test DAC - PGA - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(true)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(true)
+      inputDriveControls.pdp(index).set(true)
+      pgaSettings.pdPga(index).set(false)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(false)
+      miscControls.rstbDigCor(index).set(true)
+    } else if (sm == "Test DAC - ADC") {
+      clockSettings.enAdcClk(index).set(false)
+      clockSettings.selAdcClk(index).set(true)
+      clockSettings.enPgaClk(index).set(false)
+      clockSettings.selPgaClk(index).set(false)
+      clockSettings.enClkMode(index).set(true)
+      inputDriveControls.pdn(index).set(true)
+      inputDriveControls.pdp(index).set(true)
+      pgaSettings.pdPga(index).set(true)
+      miscControls.pdAdc(index).set(false)
+      miscControls.pdAdcRefDrv(index).set(false)
+      miscControls.pdPgaRefDrv(index).set(true)
+      miscControls.rstbDigCor(index).set(true)
+    }
+    modePositive.selectedMode(index).set(modeMap(sm))
+    modeNegative.selectedMode(index).set(modeMap(sm))
+  }
+
+  selectedMode.onChange()
+
+  val modeMap = ListMap(
+    "PAD - PGA - ADC" -> "External Drive - PGA - ADC",
+    "PAD - ADC" -> "External Drive - ADC",
+    "PAD - Input Buffer - PGA - ADC" -> "On-chip Drive - PGA - ADC",
+    "PAD - Input Buffer - ADC" -> "On-chip Drive - ADC",
+    "Test DAC - PGA - ADC" -> "DAC reference input - PGA - ADC",
+    "Test DAC - ADC" -> "DAC reference input - ADC"
+  )
+
+  val modeList = ObservableBuffer(modeMap.keys.toList)
+
   val clockSettings = new AdcChannelClockSettings(baseAddress)
   val timingSliders = new AdcChannelTimingSliders(baseAddress + 1)
   val inputDriveControls = new AdcChannelInputDriveControls(baseAddress + 2)

@@ -77,24 +77,7 @@ object UsbCam3825TestUtility extends JFXApp {
               padding = Insets(10)
               spacing = 10
               content = List(
-                new Button("Reset") {
-                  disable = true // TODO: Enable pending implementation
-                  tooltip = "Not Implemented Yet"
-                },
-                new Button("Memory Map") {
-                  onAction = () => {
-                    MtAs1410x2MemoryMap.ReadAsicMemory()
-                    MtAs1410x2MemoryMapStage.show()
-                  }
-                },
-                new Separator,
-                createReadOutputControl,
-                new Separator,
-                new Button("Probe Test") {
-                  onAction = () => {
-                    MtAs1410x2ProbeTestStage.show()
-                  }
-                }
+                createReadOutputControl
               )
             }
             center = new TabPane {
@@ -115,55 +98,9 @@ object UsbCam3825TestUtility extends JFXApp {
                   closable = false
                 },
                 new Tab {
-                  text = "Timing Generator"
-                  content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
-                  closable = false
-                },
-                new Tab {
                   text = "ADC Channel"
                   content = UsbCam3825AdcChannelControls.createAdcChannelTab
                   closable = false
-                }
-              )
-            }
-          }
-        },
-        new Tab {
-          text = "ROIC"
-          closable = false
-          disable = true // TODO: Enable pending implementation
-//          disable <== !DeviceInterfaceModel.bitfileDeployed
-          tooltip = "Not Implemented Yet"
-          content = new BorderPane {
-            left = new VBox {
-              padding = Insets(10)
-              spacing = 10
-              content = List(
-                new Button("Reset"),
-                new Button("Memory Map")
-              )
-            }
-            center = new TabPane {
-              tabs = List(
-                new Tab {
-                  text = "Digital Controller"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "Bias Generator"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "RefMem/NUC"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "Readout"
-                  closable = false
-                  content = new ScrollPane
                 }
               )
             }
