@@ -3,7 +3,7 @@ package com.mikrotasarim.ui.model
 import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 import scala.collection.immutable.ListMap
-import scalafx.beans.property.{StringProperty, BooleanProperty}
+import scalafx.beans.property.{DoubleProperty, IntegerProperty, StringProperty, BooleanProperty}
 import scalafx.collections.ObservableBuffer
 
 class BiasGenerator {
@@ -103,36 +103,52 @@ class BiasGenerator {
     new DacControlModel(label, defaultValue, (0, 3), address, 12, CommitMemoryLocation)
 
   val biasGeneratorVoltageDacs = ObservableBuffer(
-    CreateBiasGeneratorVoltageDac("vin_p_ref", 80, 1.65),
-    CreateBiasGeneratorVoltageDac("vin_n_ref", 79, 1.65),
-    CreateBiasGeneratorVoltageDac("vpcas_predrv", 78, 1.8),
-    CreateBiasGeneratorVoltageDac("vncas_predrv", 77, 1.5),
-    CreateBiasGeneratorVoltageDac("vpcas_pga", 76, 1.8),
-    CreateBiasGeneratorVoltageDac("vncas_pga", 75, 1.5),
+    CreateBiasGeneratorVoltageDac("vin_p_test", 80, 1.65),
+    CreateBiasGeneratorVoltageDac("vin_n_test", 79, 1.65),
     CreateBiasGeneratorVoltageDac("vcm_pga", 74, 1.65),
-    CreateBiasGeneratorVoltageDac("vpcas_cm_pga", 73, 1.65),
-    CreateBiasGeneratorVoltageDac("vncas_cm_pga", 72, 1.65),
-    CreateBiasGeneratorVoltageDac("vpcas_1_adc", 71, 1.8),
-    CreateBiasGeneratorVoltageDac("vncas_1_adc", 70, 1.5),
-    CreateBiasGeneratorVoltageDac("vncas_p_1_adc", 69, 1.55),
-    CreateBiasGeneratorVoltageDac("vpcas_2_adc", 68, 1.8),
-    CreateBiasGeneratorVoltageDac("vncas_2_adc", 67, 1.5),
-    CreateBiasGeneratorVoltageDac("vncas_p_2_adc", 66, 1.55),
-    CreateBiasGeneratorVoltageDac("vpcas_3_adc", 65, 1.8),
-    CreateBiasGeneratorVoltageDac("vncas_3_adc", 64, 1.5),
     CreateBiasGeneratorVoltageDac("vcm_adc", 63, 1.65),
-    CreateBiasGeneratorVoltageDac("vpcas_cm_adc", 62, 1.65),
-    CreateBiasGeneratorVoltageDac("vncas_cm_adc", 61, 1.65),
     CreateBiasGeneratorVoltageDac("vref_high", 60, 2.65),
-    CreateBiasGeneratorVoltageDac("vpcas_ref_high", 59, 1.65),
-    CreateBiasGeneratorVoltageDac("vncas_ref_high", 58, 1.65),
     CreateBiasGeneratorVoltageDac("vref_low", 57, 0.65),
-    CreateBiasGeneratorVoltageDac("vpcas_ref_low", 56, 1.65),
-    CreateBiasGeneratorVoltageDac("vncas_ref_low", 55, 1.65),
-    CreateBiasGeneratorVoltageDac("vref_mid", 54, 1.65),
-    CreateBiasGeneratorVoltageDac("vpcas_ref_mid", 53, 1.65),
-    CreateBiasGeneratorVoltageDac("vncas_ref_mid", 52, 1.65)
+    CreateBiasGeneratorVoltageDac("vref_mid", 54, 1.65)
   )
+
+  val power = DoubleProperty(4)
+  val powerDown = BooleanProperty(value = false)
+  val lowPower = BooleanProperty(value = false)
+  val powerChanged = BooleanProperty(value = false)
+
+  power.onChange(powerChanged.set(true))
+  powerDown.onChange(powerChanged.set(true))
+  lowPower.onChange(powerChanged.set(true))
+
+  def CommitPower(): Unit = {
+    for (b <- biasGeneratorCurrentDacs) b.powerDown.set(powerDown.value)
+    for (b <- biasGeneratorCurrentDacs) b.lowPower.set(lowPower.value)
+    biasGeneratorCurrentDacs(0).value.set(power.value * 10)
+    biasGeneratorCurrentDacs(1).value.set(power.value * 5)
+    biasGeneratorCurrentDacs(2).value.set(power.value * 5)
+    biasGeneratorCurrentDacs(3).value.set(power.value * 4)
+    biasGeneratorCurrentDacs(4).value.set(power.value * 4)
+    biasGeneratorCurrentDacs(5).value.set(power.value * 4)
+    biasGeneratorCurrentDacs(6).value.set(power.value * 5)
+    biasGeneratorCurrentDacs(7).value.set(power.value * 4)
+    biasGeneratorCurrentDacs(0).Commit()
+    biasGeneratorCurrentDacs(1).Commit()
+    biasGeneratorCurrentDacs(2).Commit()
+    biasGeneratorCurrentDacs(3).Commit()
+    biasGeneratorCurrentDacs(4).Commit()
+    biasGeneratorCurrentDacs(5).Commit()
+    biasGeneratorCurrentDacs(6).Commit()
+    biasGeneratorCurrentDacs(7).Commit()
+    powerChanged.set(false)
+  }
+
+  def ResetPower(): Unit = {
+    power.set(4)
+    powerDown.set(false)
+    lowPower.set(false)
+    CommitPower()
+  }
 
   val biasGeneratorCurrentDacs = ObservableBuffer(
     CreateBiasGeneratorCurrentDac("ibias_predrv", 51, 40),

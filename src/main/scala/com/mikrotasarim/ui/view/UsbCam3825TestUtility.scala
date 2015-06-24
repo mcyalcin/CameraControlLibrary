@@ -77,24 +77,7 @@ object UsbCam3825TestUtility extends JFXApp {
               padding = Insets(10)
               spacing = 10
               content = List(
-                new Button("Reset") {
-                  disable = true // TODO: Enable pending implementation
-                  tooltip = "Not Implemented Yet"
-                },
-                new Button("Memory Map") {
-                  onAction = () => {
-                    MtAs1410x2MemoryMap.ReadAsicMemory()
-                    MtAs1410x2MemoryMapStage.show()
-                  }
-                },
-                new Separator,
-                createReadOutputControl,
-                new Separator,
-                new Button("Probe Test") {
-                  onAction = () => {
-                    MtAs1410x2ProbeTestStage.show()
-                  }
-                }
+                createReadOutputControl
               )
             }
             center = new TabPane {
@@ -112,11 +95,6 @@ object UsbCam3825TestUtility extends JFXApp {
                 new Tab {
                   text = "Bias Generator"
                   content = UsbCam3825BiasGeneratorControls.createBiasGeneratorTab
-                  closable = false
-                },
-                new Tab {
-                  text = "Timing Generator"
-                  content = UsbCam3825TimingGeneratorControls.createTimingGeneratorTab
                   closable = false
                 },
                 new Tab {
