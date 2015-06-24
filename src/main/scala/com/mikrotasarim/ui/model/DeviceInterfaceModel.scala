@@ -162,6 +162,11 @@ object DeviceInterfaceModel {
       timingGenerator = new TimingGenerator
 
       UsbCam3825TestUtility.Reset()
+
+      adcChannel.AdcChannelTopSettings.powerDown(0).set(true)
+      adcChannel.AdcChannelTopSettings.powerDown(1).set(true)
+      adcChannel.AdcChannelBotSettings.powerDown(0).set(true)
+      adcChannel.AdcChannelBotSettings.powerDown(1).set(true)
     }
 
     val fpgaReset = new BooleanProperty() {
