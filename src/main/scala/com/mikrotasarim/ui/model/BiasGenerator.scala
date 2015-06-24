@@ -3,7 +3,7 @@ package com.mikrotasarim.ui.model
 import DeviceInterfaceModel.{MemoryLocation, CommitMemoryLocation}
 
 import scala.collection.immutable.ListMap
-import scalafx.beans.property.{DoubleProperty, IntegerProperty, StringProperty, BooleanProperty}
+import scalafx.beans.property.{DoubleProperty, StringProperty, BooleanProperty}
 import scalafx.collections.ObservableBuffer
 
 class BiasGenerator {

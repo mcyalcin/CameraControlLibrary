@@ -1,15 +1,12 @@
 package com.mikrotasarim.ui.view
 
-import javafx.util.converter.IntegerStringConverter
-
 import com.mikrotasarim.ui.model.DeviceInterfaceModel.biasGenerator
 
 import scalafx.Includes._
 import scalafx.geometry.Insets
 import scalafx.scene.Node
 import scalafx.scene.control._
-import scalafx.scene.layout.{VBox, HBox}
-import scalafx.util.converter.DoubleStringConverter
+import scalafx.scene.layout.{HBox, VBox}
 
 object UsbCam3825BiasGeneratorControls {
   def createBiasGeneratorTab: Node = {
@@ -37,7 +34,7 @@ object UsbCam3825BiasGeneratorControls {
               },
               new VBox {
                 spacing = 5
-                content = (createPowerSlider +: List(new Label("Voltage DACs"))) ++ createBiasGeneratorVoltageDacControls ++ createBiasGeneratorCurrentDacControls
+                content = (createPowerSlider +: List(new Label("Voltage DACs"))) ++ createBiasGeneratorVoltageDacControls
               }
             )
           }

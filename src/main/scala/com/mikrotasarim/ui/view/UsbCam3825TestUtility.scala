@@ -105,47 +105,6 @@ object UsbCam3825TestUtility extends JFXApp {
               )
             }
           }
-        },
-        new Tab {
-          text = "ROIC"
-          closable = false
-          disable = true // TODO: Enable pending implementation
-//          disable <== !DeviceInterfaceModel.bitfileDeployed
-          tooltip = "Not Implemented Yet"
-          content = new BorderPane {
-            left = new VBox {
-              padding = Insets(10)
-              spacing = 10
-              content = List(
-                new Button("Reset"),
-                new Button("Memory Map")
-              )
-            }
-            center = new TabPane {
-              tabs = List(
-                new Tab {
-                  text = "Digital Controller"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "Bias Generator"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "RefMem/NUC"
-                  closable = false
-                  content = new ScrollPane
-                },
-                new Tab {
-                  text = "Readout"
-                  closable = false
-                  content = new ScrollPane
-                }
-              )
-            }
-          }
         }
       )
     }
