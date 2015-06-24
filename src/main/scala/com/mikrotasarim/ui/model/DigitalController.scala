@@ -63,14 +63,7 @@ class DigitalController {
     new DigPadDriveImpl("sdin_roic<1>", 93, 3),
     new DigPadDriveImpl("sdin_roic<0>", 93, 6),
     new DigPadDriveImpl("sysclk_roic", 93, 9),
-    new DigPadDriveImpl("sdout_asic", 93, 12, 7),
-    new DigPadDriveImpl("digtest<1>", 92, 0),
-    new DigPadDriveImpl("digtest<0>", 92, 3),
-    new DigPadDriveImpl("digtest_tg<4>", 92, 6),
-    new DigPadDriveImpl("digtest_tg<3>", 92, 9),
-    new DigPadDriveImpl("digtest_tg<2>", 92, 12),
-    new DigPadDriveImpl("digtest_tg<1>", 91, 0),
-    new DigPadDriveImpl("digtest_tg<0>", 91, 3)
+    new DigPadDriveImpl("sdout_asic", 93, 12, 7)
   ).reverse
 
   val digTest0Options = ListMap(
